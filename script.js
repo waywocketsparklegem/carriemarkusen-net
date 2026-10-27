@@ -345,12 +345,36 @@ function setHolo(on) {
   return on ? "holo mode on. move around to tilt." : "back to normal.";
 }
 
-// Rage mode: the terminal in blood red, with an acid-wash texture over everything (styles at the end of
-// styles.css); dream.js grows sharp strands, slowly. Esc ends it; like silly mode it lasts until the page changes.
+// Rage mode: the terminal in blood red, with living veins over everything that scream now and then (rage.js;
+// styles at the end of styles.css); dream.js grows sharp spikes. Esc ends it; like silly mode it lasts until the page changes.
+// The sidebar's :) turns into a :( while it's on. It starts by asking for a scream: the prompt says "scream
+// something", and the next line typed is planted in the dream in place of the words, instead of being run.
+// Typing rage again starts over (the usual words, and a new scream).
+let awaitingScream = false;
+
 function setRage(on) {
   const root = document.documentElement;
+  if (on && root.classList.contains("rage")) document.dispatchEvent(new CustomEvent("dream-replant"));
   root.classList.toggle("rage", on);
-  return on ? "rage mode on." : "back to normal.";
+  if (on) rage.start();
+  else rage.stop();
+  document.querySelectorAll(".sidebar-label").forEach((label) => { label.textContent = on ? ":(" : ":)"; });
+  awaitingScream = on;
+  setPromptName(on ? "scream something" : "carrie@brain");
+  return on ? "" : "back to normal.";
+}
+
+function scream(line) {
+  awaitingScream = false;
+  setPromptName("carrie@brain");
+  document.dispatchEvent(new CustomEvent("dream-replant", { detail: line.slice(0, 60) }));
+  return "you have the power to escape your rage.";
+}
+
+// The command line's prompt: "carrie@brain ~>" (the ~> is drawn as one squiggly arrow).
+function setPromptName(name) {
+  const label = document.querySelector('label[for="cli-input"]');
+  if (label) label.textContent = name + " ~>";
 }
 
 // Modes take turns: switching one on first ends any other, so they never mix. Ends every mode except
@@ -449,7 +473,8 @@ function findCommand(line) {
 function runCommand(line) {
   const command = findCommand(line);
   quoteShowing = false;  // any command replaces a showing quote ("quote" sets it again)
-  document.getElementById("cli-output").textContent = command ? command() : `command not found: ${line.trim().split(/\s+/)[0]}. try help`;
+  if (awaitingScream) document.getElementById("cli-output").textContent = scream(line.trim());
+  else document.getElementById("cli-output").textContent = command ? command() : `command not found: ${line.trim().split(/\s+/)[0]}. try help`;
   const input = document.getElementById("cli-input");
   input.placeholder = nextHint || defaultHint();
   nextHint = "";

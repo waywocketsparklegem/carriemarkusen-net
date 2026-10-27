@@ -1102,3 +1102,44 @@ html.rage body::before {
   mix-blend-mode: screen;
   opacity: 0.13;
 }
+
+/* Living veins (rage.js): a canvas replaces the still veins above, keeping the grain. Without WebGL the
+   still veins stay. */
+html.rage.rage-live body::before {
+  background-size: 300px 300px, 0 0;
+}
+
+.rage-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 49;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+}
+
+/* Screaming: the veins go full strength and the page splits into red and cyan. */
+html.rage.scream .rage-canvas {
+  opacity: 1;
+}
+
+html.rage.scream .screen {
+  filter: drop-shadow(-8px 0 rgba(255, 0, 40, 0.85)) drop-shadow(8px 0 rgba(0, 255, 255, 0.55));
+}
+
+/* The inverted flash at the start of a scream: white in "difference" mode flips every color under it. */
+.rage-flash {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  pointer-events: none;
+  background: #ffffff;
+  mix-blend-mode: difference;
+}
+
+html.rage.flashing .rage-flash {
+  display: block;
+}

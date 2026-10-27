@@ -13,6 +13,7 @@
 // Settings. Edit freely.
 const cellSize = 2;        // screen pixels per grid cell: bigger means bigger folds and less work
 const stepsPerFrame = 4;   // simulation steps per frame: more means faster growth
+const rageStepsPerFrame = 1;    // the same in rage mode (0.5 would be one step every other frame)
 const brushSize = 5;       // radius of the drag brush, in cells
 const green = [3 / 255, 249 / 255, 0];            // --green
 const white = [252 / 255, 252 / 255, 252 / 255];  // --white
@@ -38,7 +39,8 @@ in vec2 uv;
 out vec4 color;
 void main() {
   float amount = fract(sin(dot(uv * 997.0 + salt, vec2(12.9898, 78.233))) * 43758.5453);
-  color = vec4(1.0, step(0.5, texture(seed, uv).a) * (0.55 + 0.45 * amount), 0.0, 1.0);
+  float shape = step(0.5, texture(seed, uv).a);
+  color = vec4(1.0, shape * (0.55 + 0.45 * amount), shape, 1.0);  // blue remembers the starting shape
 }`;
 
 // One step of the simulation. The red channel holds chemical A, green holds chemical B.
@@ -50,7 +52,10 @@ uniform float time;        // seconds
 uniform vec2 brushFrom;    // the line the pointer dragged along, in cells
 uniform vec2 brushTo;
 uniform float brushSize;   // 0 when nothing is being dragged
-uniform float rage;        // 1 in rage mode: rules that grow sharp strands, stretched downward like drips
+uniform float rage;        // 1 in rage mode: rules that shoot sharp spikes out from the words
+uniform vec2 slashFrom;    // rage mode: the line the mouse just slashed along, in cells
+uniform vec2 slashTo;
+uniform float slashWidth;  // 0 when the mouse hasn't moved
 in vec2 uv;
 out vec4 color;
 
@@ -58,16 +63,40 @@ vec2 at(vec2 offset) {
   return texture(state, uv + offset / grid).rg;
 }
 
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+// Smooth random values between 0 and 1.
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
 void main() {
   vec2 here = at(vec2(0.0));
+  float shape = texture(state, uv).b;  // the letters, in rage mode
+
+  // Rage mode: the chemicals spread mostly in one direction, which points out from the middle of the window and
+  // wobbles from place to place, so growth shoots outward in spikes. In some patches they spread evenly and blob.
+  vec2 out_ = uv * grid - grid * 0.5;
+  float angle = atan(out_.y, out_.x) + 2.4 * (noise(uv * 7.0 + time * 0.02) - 0.5);
+  vec2 direction = vec2(cos(angle), sin(angle));
+  float sharp = rage * (1.0 - smoothstep(0.6, 0.8, noise(uv * 3.0 + 17.0)));
 
   // How much each chemical differs from its neighbours: this is what makes them spread.
-  // In rage mode they spread seven times as easily up and down as sideways, so growth runs in vertical strands.
-  float across = mix(1.0, 0.25, rage);
-  float down = mix(1.0, 1.75, rage);
-  vec2 spread = -here * (0.4 * across + 0.4 * down + 0.2)
-    + 0.2 * (across * (at(vec2(1.0, 0.0)) + at(vec2(-1.0, 0.0))) + down * (at(vec2(0.0, 1.0)) + at(vec2(0.0, -1.0))))
-    + 0.05 * (at(vec2(1.0, 1.0)) + at(vec2(-1.0, 1.0)) + at(vec2(1.0, -1.0)) + at(vec2(-1.0, -1.0)));
+  vec2 spread = vec2(0.0);
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      if (x == 0 && y == 0) continue;
+      vec2 offset = vec2(x, y);
+      float weight = (x == 0 || y == 0) ? 0.2 : 0.05;
+      float along = dot(normalize(offset), direction);
+      weight *= mix(1.0, 0.15 + 1.36 * along * along, sharp);
+      spread += weight * (at(offset) - here);
+    }
+  }
 
   // Feed and kill rates drift across the screen and over time, so different areas grow different folds.
   // Rage mode feeds less and kills a little less, which grows thin, sharp strands instead of rounded coral.
@@ -86,7 +115,25 @@ void main() {
   float along = clamp(dot(p, line) / max(dot(line, line), 0.0001), 0.0, 1.0);
   if (length(p - line * along) < brushSize) next.g = 1.0;
 
-  color = vec4(clamp(next, 0.0, 1.0), 0.0, 1.0);
+  // Rage mode: the letters keep feeding the growth, so they stay readable while spikes shoot out of them.
+  next.g = max(next.g, 0.8 * shape * rage);
+
+  // Rage mode: the mouse rips a jagged cut through everything, letters included, leaving torn fibers along the edges.
+  if (slashWidth > 0.0) {
+    vec2 q = uv * grid - slashFrom;
+    vec2 cut = slashTo - slashFrom;
+    float t = clamp(dot(q, cut) / max(dot(cut, cut), 0.0001), 0.0, 1.0);
+    float distance = length(q - cut * t);
+    float width = slashWidth * (1.0 - 0.7 * t) * (0.6 + 0.8 * hash(floor(uv * grid * 0.5) + time));  // tapers to a point
+    if (distance < width) {
+      next = vec2(1.0, 0.0);
+      shape = 0.0;
+    } else if (distance < width + 2.0 && hash(uv * grid + time) > 0.7) {
+      next.g = 1.0;
+    }
+  }
+
+  color = vec4(clamp(next, 0.0, 1.0), shape, 1.0);
 }`;
 
 // Draws the grid: chemical B is treated as height and lit from the top left, so the folds look solid.
@@ -215,6 +262,8 @@ let grid = [1, 1];
 let targets = [];
 let current = 0;
 let brush = null;   // { from, to } in cells, waiting to be drawn
+let slash = null;   // rage mode: { from, to, width } in cells, waiting to be cut
+let lastHover = null;
 let lastPoint = null;
 
 // Sizes the canvas and grid to the window, then plants the :).
@@ -231,15 +280,26 @@ function setup() {
   targets = [makeTarget(...grid), makeTarget(...grid)];
   current = 0;
 
-  // Draw a big :) on a hidden canvas the size of the grid, and use it as the starting B. In rage mode it's a :( instead.
+  // Draw a big :) on a hidden canvas the size of the grid, and use it as the starting B. In rage mode it's the
+  // rage words (rageText) in JetBrains Mono Thin instead, wrapped into lines.
   const sketch = document.createElement("canvas");
   [sketch.width, sketch.height] = grid;
   const pen = sketch.getContext("2d");
-  const size = Math.min(grid[1] * 0.6, grid[0] / 1.4);
-  pen.font = `400 ${size}px "JetBrains Mono", monospace`;
   pen.textAlign = "center";
   pen.textBaseline = "middle";
-  pen.fillText(document.documentElement.classList.contains("rage") ? ":(" : ":)", grid[0] / 2, grid[1] / 2);
+  if (document.documentElement.classList.contains("rage")) {
+    const lines = wrapWords(rageText);
+    const longest = Math.max(...lines.map((line) => line.length));
+    const size = Math.min(grid[1] * 0.8 / (lines.length * 1.2), grid[0] * 0.85 / (longest * 0.6));
+    pen.font = `100 ${size}px "JetBrains Mono", monospace`;
+    lines.forEach((line, i) => {
+      pen.fillText(line, grid[0] / 2, grid[1] / 2 + (i - (lines.length - 1) / 2) * size * 1.2);
+    });
+  } else {
+    const size = Math.min(grid[1] * 0.6, grid[0] / 1.4);
+    pen.font = `400 ${size}px "JetBrains Mono", monospace`;
+    pen.fillText(":)", grid[0] / 2, grid[1] / 2);
+  }
 
   const seed = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, seed);
@@ -256,14 +316,35 @@ function setup() {
 // different layout of rates, so the first folds don't always grow the same way.
 const rateStart = Math.random() * 1000;
 
-// Rage mode (the "rage" command): sharp strands grow from a :( in blood red.
+// Rage mode (the "rage" command): sharp spikes shoot out of "you make me feel so dumb" in blood red, and the mouse slashes them.
 const rageRed = [215 / 255, 38 / 255, 46 / 255];  // --rage-red in styles.css
 let raging = false;
+const rageWords = "you make me feel so dumb";  // planted first; then whatever the visitor screams
+let rageText = rageWords;
+
+// Breaks words into lines of roughly equal length, about as many lines as characters per line, so the words
+// fill the window: "you make me feel so dumb" becomes "you make / me feel / so dumb".
+function wrapWords(text) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const width = Math.max(...words.map((word) => word.length), Math.ceil(Math.sqrt(text.length * 2.2)));
+  const lines = [];
+  for (const word of words) {
+    const last = lines.length - 1;
+    if (last >= 0 && lines[last].length + 1 + word.length <= width) lines[last] += " " + word;
+    else lines.push(word);
+  }
+  return lines;
+}
+let rageSteps = 0;  // rage mode's steps owed so far, since it can run less than one per frame
 
 function frame(now) {
-  // Entering or leaving rage mode plants a fresh face (:( in rage, :) otherwise), so no mode inherits the other's growth.
+  // Entering or leaving rage mode plants a fresh seed (the words in rage, :) otherwise), so no mode inherits the other's growth.
   const rageNow = document.documentElement.classList.contains("rage");
-  if (rageNow !== raging) setup();
+  if (rageNow !== raging) {
+    rageText = rageWords;
+    hint.textContent = rageNow ? "[ move to slash ]" : "[ drag to grow ]";
+    setup();
+  }
   raging = rageNow;
 
   // In sky mode the clouds take the window's place, so the dream pauses until it ends.
@@ -282,14 +363,27 @@ function frame(now) {
     brushTo: brush ? brush.to : [0, 0],
     brushSize: brush ? brushSize : 0,
     rage: raging ? 1 : 0,
+    slashFrom: slash ? slash.from : [0, 0],
+    slashTo: slash ? slash.to : [0, 0],
+    slashWidth: slash ? slash.width : 0,
   });
-  // Rage mode grows at half speed.
-  const steps = waiting ? 0 : raging ? Math.ceil(stepsPerFrame / 2) : stepsPerFrame;
+  // Rage mode grows slower (rageStepsPerFrame), adding up fractions of a step until a whole one is due.
+  let steps = stepsPerFrame;
+  if (raging) {
+    rageSteps += rageStepsPerFrame;
+    steps = Math.floor(rageSteps);
+    rageSteps -= steps;
+  }
+  if (waiting) steps = 0;
   for (let i = 0; i < steps; i++) {
     run(targets[1 - current], ...grid, targets[current].texture);
     current = 1 - current;
   }
-  brush = null;
+  // A brush or slash waits for a frame that actually runs a step.
+  if (steps > 0) {
+    brush = null;
+    slash = null;
+  }
 
   use(drawProgram, {
     grid,
@@ -317,16 +411,33 @@ function toCells(event) {
 
 function setupPointer() {
   canvas.addEventListener("pointerdown", (event) => {
+    if (raging) return;  // in rage mode moving is enough
     canvas.setPointerCapture(event.pointerId);
     lastPoint = toCells(event);
     brush = { from: lastPoint, to: lastPoint };
   });
   canvas.addEventListener("pointermove", (event) => {
+    if (raging) {
+      // Rage mode: every move slashes, no click needed. Faster moves cut wider and overshoot further.
+      const point = toCells(event);
+      if (lastHover) {
+        const move = [point[0] - lastHover[0], point[1] - lastHover[1]];
+        const length = Math.hypot(...move);
+        if (length > 0.5) {
+          const to = [point[0] + move[0] * 0.4, point[1] + move[1] * 0.4];
+          const width = Math.min(5, 1.2 + length * 0.12);
+          slash = { from: slash ? slash.from : lastHover, to, width: Math.max(slash ? slash.width : 0, width) };
+        }
+      }
+      lastHover = point;
+      return;
+    }
     if (!lastPoint) return;
     const point = toCells(event);
     brush = { from: brush ? brush.from : lastPoint, to: point };
     lastPoint = point;
   });
+  canvas.addEventListener("pointerleave", () => { lastHover = null; });
   const stop = () => { lastPoint = null; };
   canvas.addEventListener("pointerup", stop);
   canvas.addEventListener("pointercancel", stop);
@@ -351,10 +462,17 @@ async function start() {
     stepProgram = makeProgram(stepShader);
     drawProgram = makeProgram(drawShader);
 
-    // Wait for the font so the :) is drawn in JetBrains Mono.
-    try { await document.fonts.load('400 100px "JetBrains Mono"'); } catch (e) {}
+    // Wait for the font so the :) (and rage mode's words, in Thin) are drawn in JetBrains Mono.
+    try {
+      await Promise.all([document.fonts.load('400 100px "JetBrains Mono"'), document.fonts.load('100 100px "JetBrains Mono"')]);
+    } catch (e) {}
     setup();
     setupPointer();
+    // Sent by script.js with what the visitor screamed (or nothing, to start over with the usual words).
+    document.addEventListener("dream-replant", (event) => {
+      rageText = event.detail || rageWords;
+      setup();
+    });
     requestAnimationFrame(frame);
 
     // A new window size starts a new dream.
