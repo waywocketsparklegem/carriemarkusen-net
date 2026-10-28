@@ -5,8 +5,9 @@ Personal portfolio for Carrie Markusen, live at https://carriemarkusen.net. It's
 ## Constraints
 
 - Plain HTML, CSS and one small `script.js` (added in Build 4). No framework, no build step.
-- Hosted on GitHub Pages from the `main` branch, root folder. Repo: `waywocketsparklegem/waywocketsparklegem.github.io` (public).
+- Hosted on GitHub Pages from the `main` branch, root folder. Repo: `waywocketsparklegem/carriemarkusen-net` (public; renamed from `waywocketsparklegem.github.io` on 2026-10-28). Local folder: `~/Documents/Claude/carriemarkusen-net`.
 - `CNAME` holds `carriemarkusen.net`. `.nojekyll` is empty and turns off Jekyll.
+- Sister site: carriemarkusen.com, in `~/Documents/Claude/carriemarkusen-com`. The top of each site's `styles.css` has a block marked "Shared with ..." (the `:root` tokens and base `*`/`html`/`body` rules) that must stay identical in both. Whenever that block changes in either site, ask Carrie whether to copy the change to the other site. Everything below the block is the site's own.
 - Files are edited by hand, so keep the code simple and readable, and keep links relative (`styles.css`, `project-1.html`) so pages work when opened locally and on the live site.
 
 ## Working with Carrie
