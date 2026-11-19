@@ -349,7 +349,7 @@ void main() {
   //   stratus  a generally grey layer with a uniform base; blue sky shows where it breaks up
   //   nimbus   rain cloud: a thick, dark grey layer, diffused by falling rain, thick enough to blot out the sun
   // https://www.noaa.gov/jetstream/clouds/ten-basic-clouds
-  // Each type has a description (about), which carriemarkusen.net's command line shows when the type is picked,
+  // Each type has a description (about), which carriemarkusen.net's sidebar shows when the type is picked,
   // and two sets of four numbers:
   //   look:  [scale, stretch, softness, extra cover]
   //     scale        how small the clouds are (2 = half the size)
@@ -391,31 +391,38 @@ void main() {
     document.getElementById('types').append(b);
     return b;
   });
-  // On carriemarkusen.net the simulator opens in a window, and the site's command line hint can say something:
-  // HINT when it opens or daytime/sunset is clicked, and the description of each cloud type picked. On its own,
-  // nothing is sent.
+  // On carriemarkusen.net the simulator opens in a window, and it can say things there: HINT in the command line's
+  // hint when it opens or daytime/sunset is clicked (one short line), and the description of each cloud type
+  // picked in the sidebar, under its name (it's long, and wraps there). On its own, nothing is sent.
   const HINT = 'i could lay here with you forever';
   function sayHint(hint) {
     if (window.parent !== window) window.parent.postMessage({ hint }, '*');
+  }
+  function sayAbout(about) {
+    if (window.parent !== window) window.parent.postMessage({ about }, '*');
   }
   sayHint(HINT);
 
   // carriemarkusen.net can show the simulator full screen behind its own panels. It then says how far in from each
   // edge they reach, and the controls move to stay clear of them.
   const controls = document.getElementById('controls');
+  let margin = { x: 20, y: 20 };
+  let inset = {};
   window.addEventListener('message', (event) => {
     if (event.source !== window.parent || window.parent === window) return;
-    const inset = event.data && event.data.inset;
-    if (!inset) return;
+    const data = event.data || {};
+    if (!data.inset) return;
+    inset = data.inset;
     for (const side of ['right', 'bottom', 'left']) {
-      const px = Number(inset[side]);
-      if (Number.isFinite(px)) controls.style[side] = `${20 + Math.max(0, px)}px`;
+      const px = Number(inset[side]) || 0;
+      const pad = side === 'bottom' ? margin.y : margin.x;
+      controls.style[side] = `${pad + Math.max(0, px)}px`;
     }
   });
 
   function pickType(i) {
     if (i === typeTo) return;
-    sayHint(TYPES[i].about);
+    sayAbout(TYPES[i].about);
     if (typeProgress >= 0.5) typeFrom = typeTo;  // mostly the new type by now: dissolve from it instead
     typeTo = i;
     typeProgress = 0;
@@ -501,6 +508,15 @@ void main() {
   }
   requestAnimationFrame(frame);
 })();
+</script>
+<script src="bridge.js"></script>
+<script>
+  // Inside carriemarkusen.net, these controls move to the site's sidebar (bridge.js).
+  bridgeControls(document.getElementById('controls'), [
+    [document.querySelector('label[for="cover"]'), document.getElementById('cover'), document.getElementById('cover-value')],
+    [...document.querySelectorAll('#types button')],
+    [document.getElementById('daytime'), document.getElementById('sunset')],
+  ]);
 </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 /*
   Carrie's brain: the moving parts.
   1. Boot screen (home page only): types the welcome line, asks for the password, prints a boot log, then shows the site.
-  2. Command line in the status bar: type help, ls, cd portfolio, open resume, and so on.
+  2. Command line in the status bar: type help, ls, cd sketchbook, and so on.
   3. Clock and uptime in the status bar.
   4. Web experiments (sketchbook page): open one in a window over the right-hand viewport.
 */
@@ -11,8 +11,8 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /* ---------- 1. Boot screen ---------- */
 
 // The password typed at the boot screen. This is for show: anyone can read it here in the page source.
-// A hidden shortcut: typing any command instead (like "rage" or "cd portfolio"), or just a place's name
-// (like "portfolio"), also gets in, and runs it as the site appears. Nothing on screen mentions this.
+// A hidden shortcut: typing any command instead (like "rage" or "cd sketchbook"), or just a place's name
+// (like "sketchbook"), also gets in, and runs it as the site appears. Nothing on screen mentions this.
 const password = ":)";
 
 // Lines printed after Enter. Edit freely.
@@ -94,8 +94,10 @@ async function runBoot() {
   }
   await wait(500);
 
-  // Hide the boot screen and switch the desktop on.
+  // Hide the boot screen and switch the desktop on. The right password is remembered for 24 hours
+  // (localStorage key "unlocked", the time it was entered; index.html's <head> checks it).
   try { sessionStorage.setItem("booted", "1"); } catch (e) {}
+  try { localStorage.setItem("unlocked", String(Date.now())); } catch (e) {}
   const screen = document.getElementById("screen");
   root.classList.remove("booting");
   if (entered) runCommand(entered);
@@ -108,21 +110,13 @@ async function runBoot() {
 
 // Places you can go. The first name is the one shown by `ls`.
 const places = [
-  { names: ["project-1", "project1", "p1", "1"], url: "project-1.html" },
-  { names: ["resume.txt", "resume", "cv", "about"], url: "resume.html" },
   { names: ["sketchbook"], url: "sketchbook.html" },
-  { names: ["portfolio", "work"], url: "portfolio.html" },
-  { names: ["consent"], url: "consent.html" },
-  { names: ["medica"], url: "medica.html" },
-  { names: ["thrivent"], url: "thrivent.html" },
-  { names: ["ahip"], url: "ahip.html" },
-  { names: ["two-mules"], url: "two-mules.html" },
+  { names: ["web-experiments", "experiments"], url: "web-experiments.html" },
   { names: ["~", "home", "..", "/", "carries-brain"], url: "index.html" },
-  { names: ["dream.exe", "dream"], url: "dream.html" },
 ];
 
 function findPlace(name) {
-  const clean = (name || "").toLowerCase().replace(/\/$/, "").replace(/^(sketchbook|portfolio)\//, "");
+  const clean = (name || "").toLowerCase().replace(/\/$/, "").replace(/^sketchbook\//, "");
   return places.find((place) => place.names.includes(clean));
 }
 
@@ -136,9 +130,8 @@ function goTo(name) {
 const commands = {
   help: () =>
     "commands: ls, cd <place>, open <place>, whoami, pwd, date, clear, reboot, silly, holo, rage, cowsay <words>, sky, quote\n" +
-    "places:   portfolio, consent, medica, thrivent, ahip, two-mules, sketchbook, project-1,\n" +
-    "          resume, home",
-  ls: () => "portfolio/  sketchbook/  resume.txt",
+    "places:   sketchbook, web-experiments, home",
+  ls: () => "sketchbook/",
   cd: (name) => goTo(name || "~"),
   open: goTo,
   cat: goTo,
@@ -147,7 +140,7 @@ const commands = {
   date: () => new Date().toString().toLowerCase(),
   clear: () => "",
   reboot: () => {
-    try { sessionStorage.removeItem("booted"); } catch (e) {}
+    try { sessionStorage.removeItem("booted"); localStorage.removeItem("unlocked"); } catch (e) {}
     window.location.href = "index.html";
     return "rebooting ...";
   },
@@ -416,6 +409,17 @@ function defaultHint() {
   return root.classList.contains("silly") ? "type too silly" : "type help";
 }
 
+// Wipe the command line's reply. Any change of page does this: going to another page, coming back to one (the
+// browser can restore a page just as it was left, reply and all), and opening or closing an experiment.
+function clearOutput() {
+  const output = document.getElementById("cli-output");
+  if (output) output.textContent = "";
+  quoteShowing = false;
+}
+
+window.addEventListener("pagehide", clearOutput);
+window.addEventListener("pageshow", (event) => { if (event.persisted) clearOutput(); });
+
 // What an open experiment wants the hint to say (see setupExperiments). It stays until the window closes.
 let experimentHint = "";
 
@@ -585,37 +589,39 @@ if (!document.getElementById("boot")) {
 
 /* ---------- 4. Web experiments (sketchbook) ---------- */
 
-// Clicking an experiment opens it in a window that exactly covers the right-hand viewport: a title bar showing the
-// shader's path, and the experiment under it, with an x in a box in its top right corner to close it (Esc closes
-// it too), styled like the experiments' own controls.
+// Clicking an experiment opens it in a window that exactly covers the right-hand viewport. While it's open:
+// - the top margin shows the experiment's own location, and on the right an instruction (data-tag on its link);
+// - the file tree gives way to the experiment's info: its file name, a line about it (data-about on its link), its
+//   controls, and [ esc ] to close it (so does the Esc key). The experiment hides its own controls when it's shown here and sends a description of them
+//   (experiments/bridge.js); the sidebar draws them in the site's style and passes clicks and slider moves back.
+// The experiments are listed in the file tree too: on the web-experiments page they open the same way; from other
+// pages they go to web-experiments.html#<name>, which opens that one as the page loads.
 // Without JavaScript, the link simply opens the experiment on its own page.
 function setupExperiments() {
   const main = document.getElementById("main");
   const statusbar = document.querySelector(".statusbar");
   const links = document.querySelectorAll("a[data-experiment]");
   if (!main || !links.length) return;
+  const root = document.documentElement;
+  const pathLabel = document.querySelector(".titlebar-path");
+  const pagePath = pathLabel ? pathLabel.textContent : "";
+  // The title bar's tag on the right, like "[ read only ]". It becomes [ esc ] while an experiment is open.
+  const tagLabel = pathLabel && pathLabel.nextElementSibling;
+  const pageTag = tagLabel ? tagLabel.textContent : "";
+  const bandTop = document.querySelector(".band-top");
+  const tree = document.querySelector(".tree");
   let open = null;
 
-  // Cover the visible part of the right-hand viewport: inside the screen, and above the status bar (on phones
-  // it sticks over the window).
+  const treeLink = (id) => document.querySelector(`.tree a[href$="#${id}"]`);
+
+  // Cover the visible part of the right-hand viewport: inside the screen, one band below the top band, and above
+  // the status bar.
   function place() {
     if (!open) return;
     const box = main.getBoundingClientRect();
-    const top = Math.max(box.top, 0);
+    const gap = bandTop ? bandTop.offsetHeight : 0;
+    const top = Math.max(box.top + gap, 0);
     const bottom = Math.min(box.bottom, window.innerHeight, statusbar ? statusbar.getBoundingClientRect().top : Infinity);
-    if (open.theme) {
-      // A themed experiment fills the whole screen, behind the site's see-through panels (styles.css). Its title
-      // bar and close box stay over the right-hand viewport, and it's told where the panels are, so it can keep
-      // its own controls clear of them.
-      Object.assign(open.window.style, { top: "0", left: "0", width: "100%", height: "100%" });
-      Object.assign(open.bar.style, { position: "absolute", top: `${top}px`, left: `${box.left}px`, width: `${box.width}px` });
-      const barBottom = top + open.bar.offsetHeight;
-      open.button.style.top = `${barBottom + 20}px`;
-      open.frame.contentWindow.postMessage({
-        inset: { top: barBottom, right: 0, bottom: window.innerHeight - bottom, left: box.left },
-      }, "*");
-      return;
-    }
     Object.assign(open.window.style, {
       top: `${top}px`,
       left: `${box.left}px`,
@@ -624,16 +630,109 @@ function setupExperiments() {
     });
   }
 
+  // The sidebar panel: file name, about line, then the controls (filled in when the experiment describes them).
+  function makeInfo(link) {
+    const info = document.createElement("section");
+    info.className = "experiment-info";
+    info.setAttribute("aria-label", `${link.dataset.experiment}: info and controls`);
+    const name = document.createElement("p");
+    name.className = "experiment-name";
+    name.textContent = (link.dataset.path || link.dataset.experiment).split("/").pop();
+    info.append(name);
+    if (link.dataset.about) {
+      const about = document.createElement("p");
+      about.className = "experiment-about";
+      about.textContent = link.dataset.about;
+      info.append(about);
+    }
+    const controls = document.createElement("div");
+    controls.className = "experiment-controls";
+    // [ esc ]: closes the experiment, back to the page. It sits under the experiment's own controls.
+    const esc = document.createElement("button");
+    esc.type = "button";
+    esc.className = "control-button experiment-esc";
+    esc.textContent = "esc";
+    esc.setAttribute("aria-label", `close ${link.dataset.experiment}`);
+    esc.addEventListener("click", close);
+    info.append(controls, esc);
+    return { info, controls, esc };
+  }
+
+  // Draw the controls an experiment described: rows of text, sliders, buttons and readouts.
+  function drawControls(rows) {
+    if (!open || !Array.isArray(rows)) return;
+    const box = open.controls;
+    box.textContent = "";
+    open.parts = {};
+    const send = (message) => open.frame.contentWindow.postMessage(message, "*");
+    for (const row of rows.slice(0, 20)) {
+      if (!Array.isArray(row)) continue;
+      const line = document.createElement("div");
+      line.className = "control-row";
+      // A row with a slider in it stays on one line: liquid ---- goo.
+      if (row.some((item) => item && item.kind === "range")) line.classList.add("control-slider");
+      for (const item of row.slice(0, 12)) {
+        if (!item || typeof item !== "object") continue;
+        const id = String(item.id || "");
+        let el;
+        if (item.kind === "range") {
+          el = document.createElement("input");
+          el.type = "range";
+          el.min = String(item.min);
+          el.max = String(item.max);
+          el.step = String(item.step);
+          el.value = String(item.value);
+          if (item.label) el.setAttribute("aria-label", String(item.label));
+          el.addEventListener("input", () => send({ set: id, value: el.value }));
+        } else if (item.kind === "button") {
+          el = document.createElement("button");
+          el.type = "button";
+          el.className = "control-button";
+          el.textContent = String(item.text || "");
+          if (typeof item.pressed === "boolean") el.setAttribute("aria-pressed", String(item.pressed));
+          el.addEventListener("click", () => send({ press: id }));
+        } else {
+          el = document.createElement("span");
+          el.className = item.kind === "output" ? "control-output" : "control-text";
+          el.textContent = String(item.text || "");
+        }
+        if (id) open.parts[id] = el;
+        line.append(el);
+      }
+      box.append(line);
+    }
+  }
+
+  // An experiment says its controls changed: a slider's value, a button pressed or not, a readout's text.
+  function updateControls(state) {
+    if (!open || !open.parts || !state || typeof state !== "object") return;
+    for (const [id, change] of Object.entries(state)) {
+      const el = open.parts[id];
+      if (!el || !change) continue;
+      if ("value" in change && el.tagName === "INPUT" && document.activeElement !== el) el.value = String(change.value);
+      if (typeof change.pressed === "boolean") el.setAttribute("aria-pressed", String(change.pressed));
+      if ("text" in change && el.tagName === "SPAN") el.textContent = String(change.text);
+    }
+  }
+
   function close() {
     if (!open) return;
     open.window.remove();
-    if (open.theme) document.documentElement.classList.remove(open.theme);
+    open.info.remove();
+    root.classList.remove("experiment-open");
+    if (pathLabel) pathLabel.textContent = pagePath;
+    if (tagLabel) {
+      tagLabel.textContent = pageTag;
+      tagLabel.classList.remove("titlebar-instruction");
+    }
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
     if (experimentHint) {
       experimentHint = "";
       showHint();
     }
     open.link.focus({ preventScroll: true });
     open = null;
+    clearOutput();
     window.removeEventListener("resize", place);
     window.removeEventListener("scroll", place, true);
   }
@@ -642,8 +741,8 @@ function setupExperiments() {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       close();
+      clearOutput();
       // Opening an experiment ends any mode (see startMode).
-      const root = document.documentElement;
       const mode = ["sky", "holo", "rage", "silly"].find((m) => root.classList.contains(m));
       if (mode) {
         endModes();
@@ -654,50 +753,77 @@ function setupExperiments() {
       win.className = "experiment-window";
       win.setAttribute("role", "dialog");
       win.setAttribute("aria-label", link.dataset.experiment);
-      const bar = document.createElement("div");
-      bar.className = "titlebar experiment-titlebar";
-      const path = document.createElement("span");
-      path.className = "experiment-path";
-      path.textContent = link.dataset.path || link.dataset.experiment;
       const frame = document.createElement("iframe");
       frame.src = link.href;
       frame.title = link.dataset.experiment;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "experiment-close";
-      button.setAttribute("aria-label", `close ${link.dataset.experiment}`);
-      button.textContent = "x";
-      button.addEventListener("click", close);
       const stage = document.createElement("div");
       stage.className = "experiment-stage";
-      stage.append(frame, button);
-      bar.append(path);
-      win.append(bar, stage);
+      stage.append(frame);
+      win.append(stage);
       document.body.appendChild(win);
-      // An experiment can bring a theme for the site while it's open (data-theme on its link: a class on <html>).
-      const theme = link.dataset.theme || "";
-      if (theme) root.classList.add(theme);
-      open = { window: win, link, frame, bar, button, theme };
+
+      // The sidebar's info and controls take the file tree's place.
+      const { info, controls, esc } = makeInfo(link);
+      if (tree) tree.after(info);
+      root.classList.add("experiment-open");
+
+      open = { window: win, link, frame, info, controls, parts: {} };
+
+      // The top margin: the experiment's location, and its instruction (in gray) if it has one.
+      if (pathLabel) pathLabel.textContent = link.dataset.path || link.dataset.experiment;
+      if (tagLabel && link.dataset.tag) {
+        tagLabel.textContent = link.dataset.tag;
+        tagLabel.classList.add("titlebar-instruction");
+      }
+      // Opened from the keyboard, [ esc ] takes focus so Enter closes it.
+      if (event.detail === 0) esc.focus({ preventScroll: true });
+      if (link.id) history.replaceState(null, "", `#${link.id}`);
       frame.addEventListener("load", place);
       place();
       window.addEventListener("resize", place);
       window.addEventListener("scroll", place, true);
-      button.focus({ preventScroll: true });
     });
   }
 
-  // An experiment can set the command line's hint, by sending { hint: "..." } from its page (the cloud simulator
-  // does). Only the open experiment is listened to.
+  // The file tree's experiment entries open the experiment in place on this page.
+  for (const link of links) {
+    const entry = link.id && treeLink(link.id);
+    if (!entry) continue;
+    entry.addEventListener("click", (event) => {
+      event.preventDefault();
+      link.click();
+    });
+  }
+
+  // Arriving at web-experiments.html#<name> (from the tree on another page) opens that experiment.
+  const start = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  if (start && start.matches("a[data-experiment]")) start.click();
+
+  // Messages from the open experiment: its controls ({ controls } and { state }), a new about line for the
+  // sidebar ({ about }), and the command line's hint ({ hint }, the cloud simulator sends these). Nothing else is listened to.
   window.addEventListener("message", (event) => {
     if (!open || event.source !== open.frame.contentWindow) return;
-    const hint = event.data && event.data.hint;
-    if (typeof hint !== "string") return;
-    experimentHint = hint.slice(0, 300);
-    showHint();
+    const data = event.data || {};
+    if (data.controls) drawControls(data.controls);
+    if (data.state) updateControls(data.state);
+    // A new about line for the sidebar (the cloud simulator sends each cloud type's description).
+    if (typeof data.about === "string") {
+      let about = open.info.querySelector(".experiment-about");
+      if (!about) {
+        about = document.createElement("p");
+        about.className = "experiment-about";
+        open.info.querySelector(".experiment-name").after(about);
+      }
+      about.textContent = data.about.slice(0, 600);
+    }
+    if (typeof data.hint === "string") {
+      experimentHint = data.hint.slice(0, 300);
+      showHint();
+    }
   });
 
   // Esc closes the window first (before it would end a mode). Once you click into an experiment, the keyboard
-  // belongs to it, so use the x.
+  // belongs to it, so use [ esc ] in the sidebar.
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && open) {
       event.stopPropagation();

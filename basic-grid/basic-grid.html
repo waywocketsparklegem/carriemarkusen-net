@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio</title>
+  <style>
+    /*
+      Golden-ratio grid. Every line is a percentage of the viewport,
+      so the grid stretches with the window while the proportions hold.
+      Horizontal lines are a percentage of height; vertical lines are a percentage of width.
+
+      Proportions measured from "layout experiment.pdf" (base height 791):
+        outer margins   26.9 / 791 = 3.403%   and   44.3 / 791 = 5.597%
+        rows            1/φ³ = 23.607%   1/φ² = 38.197%   1/φ = 61.803%
+    */
+    :root {
+      --line-color: rgba(234, 234, 234, 0.55);
+      --line-width: 0.5px;
+
+      /* Rows: the same in every layout */
+      --r1: 3.403%;
+      --r2: 5.597%;
+      --r3: 23.607%;
+      --r4: 38.197%;
+      --r5: 61.803%;
+      --r6: 76.393%;
+      --r7: 94.403%;
+      --r8: 96.597%;
+
+      /* Layout 1, desktop (φ : 1): margins on both sides, 4 main columns */
+      --c1: 2.103%;
+      --c2: 3.459%;
+      --c3: 14.590%;
+      --c4: 38.197%;
+      --c5: 61.803%;
+      --c6: 85.410%;
+      --c7: 96.541%;
+      --c8: 97.897%;
+
+      /* Top / bottom margin bands (the blue areas) */
+      --band-color: #4a4dd2;
+      --band-height: 2.194vh;           /* r2 - r1, also used as font size */
+      --band-left: var(--c2);
+      --band-right: calc(100% - var(--c7));
+    }
+    @supports (height: 1dvh) {
+      :root { --band-height: 2.194dvh; }
+    }
+
+    /* Layout 2, tablet (1 : 1): left margins, right margins, 3 main columns */
+    @media (max-width: 1000px) {
+      :root {
+        --c1: 3.403%;
+        --c2: 5.597%;
+        --c3: 23.607%;
+        --c4: 61.803%;
+        --c5: 94.403%;
+        --c6: 96.597%;
+        --band-right: calc(100% - var(--c5));
+      }
+      .v7, .v8 { display: none; }
+    }
+
+    /* Layout 3, mobile (1 : φ): left margins only, 2 main columns */
+    @media (max-width: 620px) {
+      :root {
+        --c1: 5.506%;
+        --c2: 9.056%;
+        --c3: 38.197%;
+        --band-left: var(--c1);
+        --band-right: 0%;
+      }
+      .v4, .v5, .v6 { display: none; }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #000; color: #fff; overflow: hidden; }
+
+    .grid-lines {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      pointer-events: none;
+    }
+    .grid-lines span {
+      position: absolute;
+      background: var(--line-color);
+    }
+    .grid-lines .h { left: 0; right: 0; height: var(--line-width); }
+    .grid-lines .v { top: 0; bottom: 0; width: var(--line-width); }
+
+    .h1 { top: var(--r1); } .h2 { top: var(--r2); }
+    .h3 { top: var(--r3); } .h4 { top: var(--r4); }
+    .h5 { top: var(--r5); } .h6 { top: var(--r6); }
+    .h7 { top: var(--r7); } .h8 { top: var(--r8); }
+
+    .v1 { left: var(--c1); } .v2 { left: var(--c2); }
+    .v3 { left: var(--c3); } .v4 { left: var(--c4); }
+    .v5 { left: var(--c5); } .v6 { left: var(--c6); }
+    .v7 { left: var(--c7); } .v8 { left: var(--c8); }
+
+    /* Margin bands: text size equals band height, baseline sits on the band's bottom edge */
+    .margin {
+      position: fixed;
+      left: var(--band-left);
+      right: var(--band-right);
+      height: var(--band-height);
+      background: var(--band-color);
+      overflow: hidden;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-weight: 100;
+      font-size: var(--band-height);
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: #fff;
+    }
+    .margin-top    { top: var(--r1); }
+    .margin-bottom { top: var(--r7); }
+    /* Line-height 1 puts JetBrains Mono's baseline 0.14em above the box bottom; shift it down onto the edge */
+    .margin span { display: block; transform: translateY(0.14em); }
+    /* Bottom band: tops of the capitals sit on the band's top edge (cap height 0.73em, 0.13em below box top at line-height 1) */
+    .margin-bottom span { transform: translateY(-0.13em); }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="margin margin-top"><span>Top margin type</span></header>
+  <footer class="margin margin-bottom"><span>Bottom margin type</span></footer>
+
+  <div class="grid-lines" aria-hidden="true">
+    <span class="h h1"></span><span class="h h2"></span>
+    <span class="h h3"></span><span class="h h4"></span>
+    <span class="h h5"></span><span class="h h6"></span>
+    <span class="h h7"></span><span class="h h8"></span>
+
+    <span class="v v1"></span><span class="v v2"></span>
+    <span class="v v3"></span><span class="v v4"></span>
+    <span class="v v5"></span><span class="v v6"></span>
+    <span class="v v7"></span><span class="v v8"></span>
+  </div>
+</body>
+</html>

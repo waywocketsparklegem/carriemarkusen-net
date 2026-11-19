@@ -242,116 +242,384 @@ body::after {
   100% { transform: scaleY(1); filter: brightness(1); }
 }
 
-/* ---------- Screen layout ---------- */
+/* ---------- Golden-ratio grid layout (desktop layout at every size; no breakpoints yet) ---------- */
 
+/* The grid fills the window. Column lines are a share of the window's width (vw), row lines a share of its
+   height (dvh), so the grid stretches with the window and keeps its proportions.
+   Measured from Carrie's "layout experiment" PDFs (1280 x 791). */
+:root {
+  /* Column lines */
+  --c1: 2.103vw;
+  --c2: 3.459vw;
+  --c3: 14.590vw;
+  --c4: 38.197vw;
+  --c5: 61.803vw;
+  --c6: 85.410vw;
+  --c7: 96.541vw;
+  --c8: 97.897vw;
+
+  /* Row lines */
+  --r1: 3.403vh;
+  --r2: 5.597vh;
+  --r3: 23.607vh;
+  --r4: 38.197vh;
+  --r5: 61.803vh;
+  --r6: 76.393vh;
+  --r7: 94.403vh;
+  --r8: 96.597vh;
+
+  /* The margin bands' height. */
+  --band: 2.194vh;
+  /* Type sizes, as a share of the band height: margin type (":) <3 *" and the command line) and body
+     type (everything else). Change the numbers to resize. */
+  --margin-type: calc(var(--band) * 0.9);
+  --body-type: calc(var(--band) * 0.6);
+
+  /* Padding inside the content area: the outer margin's size (the first column line's width across,
+     the first row line's height down). */
+  --pad-x: var(--c2);
+  --pad-y: var(--r2);
+
+  /* Grid lines: the site's white, partly see-through. */
+  --grid-line: rgba(252, 252, 252, 0.55);
+  --grid-line-width: 0.5px;
+}
+
+@supports (height: 1dvh) {
+  :root {
+    --r1: 3.403dvh;
+    --r2: 5.597dvh;
+    --r3: 23.607dvh;
+    --r4: 38.197dvh;
+    --r5: 61.803dvh;
+    --r6: 76.393dvh;
+    --r7: 94.403dvh;
+    --r8: 96.597dvh;
+    --band: 2.194dvh;
+  }
+}
+
+/* The screen is exactly the window. Everything is placed on the grid lines. */
 .screen {
-  display: grid;
-  min-height: 100vh;
-  min-height: 100dvh;
-  grid-template-rows: auto 1fr auto;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
 }
 
-/* ---------- Sidebar: the file tree ---------- */
-
-.sidebar {
-  padding: var(--gutter);
-  border-bottom: var(--rule) solid var(--green);
-}
-
-.sidebar-label {
-  margin-bottom: 1rem;
-  color: var(--white);
-  font-weight: 400;
-}
-
-.tree-root {
-  display: inline-block;
-  margin-bottom: 0.5rem;
-  font-size: var(--h2-size);
-}
-
-/* Tree branches are drawn with borders: a vertical line on the list, a short tick on each item. */
-.tree ul {
-  margin-left: 0.5rem;
-}
-
-.tree li {
-  position: relative;
-  padding: 0.15rem 0 0.15rem 1.5rem;
-  border-left: 1px solid var(--white);
-}
-
-.tree li:last-child {
-  border-left-color: transparent;
-}
-
-.tree li::before {
-  content: "";
+/* The grid lines, drawn over everything except the scanlines. Clicks pass through.
+   Turned off for now: delete "display: none;" to show them again. */
+.grid-lines {
+  display: none;
   position: absolute;
-  top: 0;
-  left: -1px;
-  width: 1rem;
-  height: 0.95rem;
-  border-left: 1px solid var(--white);
-  border-bottom: 1px solid var(--white);
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
 }
 
-.tree-dir {
+.grid-lines span {
+  position: absolute;
+  background: var(--grid-line);
+}
+
+.grid-lines .h { left: 0; right: 0; height: var(--grid-line-width); }
+.grid-lines .v { top: 0; bottom: 0; width: var(--grid-line-width); }
+
+.h1 { top: var(--r1); } .h2 { top: var(--r2); }
+.h3 { top: var(--r3); } .h4 { top: var(--r4); }
+.h5 { top: var(--r5); } .h6 { top: var(--r6); }
+.h7 { top: var(--r7); } .h8 { top: var(--r8); }
+
+.v1 { left: var(--c1); } .v2 { left: var(--c2); }
+.v3 { left: var(--c3); } .v4 { left: var(--c4); }
+.v5 { left: var(--c5); } .v6 { left: var(--c6); }
+.v7 { left: var(--c7); } .v8 { left: var(--c8); }
+
+/* Margin bands: between the first two row lines (top) and the last two (bottom), from the inner left
+   margin line to the inner right one. */
+.band {
+  position: absolute;
+  left: var(--c2);
+  width: calc(var(--c7) - var(--c2));
+  height: var(--band);
+  line-height: 1;
+  white-space: nowrap;
+  z-index: 3;  /* above the dream, so letters that dip below the band (g, p, y) aren't covered */
+}
+
+.band-top { top: var(--r1); }
+.band-bottom { top: var(--r7); }
+
+/* JetBrains Mono at line-height 1: the baseline sits 0.14em above the bottom of the line, and the tops
+   of the capitals 0.13em below its top. These shifts put them on the band's edges. */
+
+/* Top band, left: ":) <3 *" at the margin font size, sitting on the band's bottom edge. */
+/* It links home. No green hover: it stays as it is. */
+.band-home:hover,
+.band-home:focus-visible {
+  background: none;
+  color: inherit;
+  text-shadow: inherit;
+}
+
+.band-mark {
+  position: absolute;
+  left: 0;
+  bottom: 0;
   color: var(--white);
+  font-size: var(--margin-type);
+  transform: translateY(0.14em);
 }
 
-/* The current page: a pointer before it and white text. */
-.tree a[aria-current="page"] {
-  color: var(--white);
-}
-
-.tree a[aria-current="page"]::after {
-  content: " <";
-  color: var(--green);
-}
-
-.tree a[aria-current="page"]:hover,
-.tree a[aria-current="page"]:focus-visible {
-  color: var(--black);
-}
-
-.sidebar-meta {
-  margin-top: 2rem;
-  color: var(--white);
-  font-size: 0.75rem;
-  font-weight: 400;
-}
-
-/* ---------- Main: the content window ---------- */
-
-.window {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.titlebar {
-  flex-shrink: 0;
+/* Top band: the page's path (project information) from the second column line, and its tag (additional
+   project information) on the right. Body type size, sitting on the band's bottom edge. */
+.band .titlebar {
+  position: absolute;
+  left: calc(var(--c3) - var(--c2));
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem var(--gutter);
-  border-bottom: var(--rule) solid var(--green);
+  gap: 1em;
   color: var(--white);
-  font-size: 0.75rem;
-  white-space: nowrap;
-  overflow: hidden;
+  font-size: var(--body-type);
+  transform: translateY(0.14em);
+}
+
+.titlebar h1 {
+  font-size: inherit;
 }
 
 .titlebar-path {
   color: var(--gray);
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Room below the line so the cut-off for long paths doesn't also clip letters that dip below it. */
+  padding-bottom: 0.3em;
+  margin-bottom: -0.3em;
+}
+
+/* Bottom band, left: the command line at body type size, capitals hanging from the band's top edge. */
+.cli {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 50%;
+  display: flex;
+  gap: 1ch;
+  font-size: var(--body-type);
+  transform: translateY(-0.13em);
+}
+
+.cli label {
+  color: var(--white);
+  white-space: nowrap;
+}
+
+.cli input {
+  flex: 1;
+  min-width: 0;
+  /* A field clips whatever falls outside it, so it gets room below the line for letters that dip below it
+     (y, p, g); the negative margin keeps that room from moving anything. */
+  height: 1.3em;
+  padding: 0 0 0.3em;
+  margin-bottom: -0.3em;
+  border: 0;
+  background: none;
+  color: var(--white);
+  font: inherit;
+  line-height: 1;
+  caret-color: var(--green);
+  outline: none;
+}
+
+/* The hint (what carrie@brain says, like "type help") is italic; what you type is not. */
+.cli input::placeholder {
+  color: var(--green);
+  font-style: italic;
+}
+
+/* Bottom band, right: uptime and clock (additional project information), body type size. Capitals hang from the
+   band's top edge, on the same line as the command line. */
+.status {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  gap: 1.5em;
+  color: var(--white);
+  font-size: var(--body-type);
+  transform: translateY(-0.13em);
+}
+
+/* The file tree: from the inner left margin line to the second column line, from the third row line down to
+   the sixth, text at the top. Body type size, a flat list with a blank line under the root. */
+.tree {
+  position: absolute;
+  left: var(--c2);
+  width: calc(var(--c3) - var(--c2));
+  top: var(--r3);
+  height: calc(var(--r6) - var(--r3));
+  overflow: hidden;
+  font-size: var(--body-type);
+  line-height: 1.6;
+}
+
+.tree-root {
+  display: inline-block;
+  margin-bottom: 1.6em;
+}
+
+/* A folder's pages, indented two characters under it. */
+.tree-sub {
+  padding-left: 2ch;
+}
+
+/* Every name in the tree is white; only the current page's pointer is green. */
+.tree a {
+  color: var(--white);
+}
+
+/* The current page: a pointer after it. */
+.tree a[aria-current="page"]::after {
+  content: " <";
+  color: var(--green);
+}
+
+.tree a:hover,
+.tree a:focus-visible {
+  color: var(--black);
+}
+
+/* The command line's replies: from the inner left margin line to the third column line, from the sixth row
+   line down to one band's height above the bottom band. The newest line sits at the bottom; longer replies
+   scroll. Body type size. */
+.response {
+  position: fixed;
+  left: var(--c2);
+  width: calc(var(--c4) - var(--c2));
+  top: var(--r6);
+  height: calc(var(--r7) - var(--band) - var(--r6));
+  z-index: 1000;  /* above everything else on the site: experiments, scanlines, modes */
+  pointer-events: none;  /* empty space lets clicks and drags through to what's underneath */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  font-size: var(--body-type);
+  line-height: 1.2;
+}
+
+/* The reply sits at the bottom of the area. Each of its lines gets its own black highlight, just as wide as that
+   line's text. */
+.response-line {
+  margin-top: auto;
+  white-space: pre-wrap;
+}
+
+.cli-output {
+  background: var(--black);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  pointer-events: auto;
+}
+
+/* The window (the dream on the home page): from the second column line to the inner right margin line,
+   from under the top band down to one band's height above the bottom band. */
+.window {
+  position: absolute;
+  left: var(--c3);
+  width: calc(var(--c7) - var(--c3));
+  top: var(--r2);
+  height: calc(var(--r7) - var(--band) - var(--r2));
 }
 
 .window:focus {
-  /* The window gets focus after the boot screen and from the skip link; no outline around the whole window. */
   outline: none;
+}
+
+.home-dream {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- Sketchbook page: content placed on the grid inside the window ---------- */
+
+/* The window body fills the window; its sections are placed on the grid lines. */
+.window > .window-body {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+}
+
+/* A command line ("> cat thoughts.txt"): body type, one band's height above what it prints. */
+.sketch-section .cmd {
+  font-size: var(--body-type);
+  line-height: 1;
+}
+
+.sketch-section .output {
+  margin-top: var(--band);
+}
+
+/* cat thoughts.txt: from the third column line to the inner right margin line. The command sits on the third
+   row line, and the big header starts one band below it, wrapping onto as many lines as it needs. */
+.sketch-thoughts {
+  position: absolute;
+  top: calc(var(--r3) - var(--r2));
+  left: calc(var(--c4) - var(--c3));
+  right: 0;
+}
+
+.sketch-thoughts .display {
+  font-size: calc((var(--r3) - var(--r2) - var(--pad-y) - var(--body-type) - var(--band)) / 0.73);
+  line-height: 1.1;
+}
+
+/* ls web-experiments/ (web-experiments page): from the third column line; the command sits on the third row
+   line. Two columns, each from a column line to one margin short of the next, so the margin is the gap
+   between them. */
+.sketch-experiments {
+  position: absolute;
+  top: calc(var(--r3) - var(--r2));
+  left: calc(var(--c4) - var(--c3));
+  right: 0;
+}
+
+.sketch-experiments .gallery {
+  display: grid;
+  grid-template-columns: repeat(2, calc(var(--c4) - var(--c3) - var(--pad-x)));
+  column-gap: var(--pad-x);
+}
+
+.sketch-experiments .shot {
+  border: 0;
+  background: none;
+}
+
+/* Square thumbnails, cropped from the middle. */
+.sketch-experiments .shot img,
+.sketch-experiments .shot video {
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--placeholder);
+}
+
+/* Caption (experiment info): one band's height below the thumbnail, body type. */
+.sketch-experiments .shot figcaption {
+  justify-content: flex-start;
+  gap: 2ch;
+  margin-top: var(--band);
+  padding: 0;
+  border: 0;
+  font-size: var(--body-type);
+  line-height: 1;
+}
+
+/* Hovering a thumbnail draws a hairline green frame around it. */
+.sketch-experiments .gallery a:hover video,
+.sketch-experiments .gallery a:focus-visible video {
+  outline: var(--rule) solid var(--green);
 }
 
 .window-body {
@@ -472,108 +740,6 @@ body::after {
   border-top: var(--rule) dashed var(--green);
 }
 
-/* ---------- Status bar with the command line ---------- */
-
-.statusbar {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem 1.5rem;
-  padding: 0.5rem var(--gutter);
-  border-top: var(--rule) solid var(--green);
-  background: var(--black);
-  font-size: 0.75rem;
-}
-
-.cli {
-  display: flex;
-  flex: 1 1 16rem;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.cli label {
-  color: var(--white);
-  white-space: nowrap;
-}
-
-.cli input {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--white);
-  font: inherit;
-  caret-color: var(--green);
-  outline: none;
-}
-
-/* The hint (what carrie@brain says, like "type help") is italic; what you type is not. */
-.cli input::placeholder {
-  color: var(--green);
-  font-style: italic;
-}
-
-/* The command line's reply appears just above the status bar. */
-.cli-output {
-  flex-basis: 100%;
-  order: -1;
-  white-space: pre-wrap;
-}
-
-.cli-output:empty {
-  display: none;
-}
-
-.status {
-  display: flex;
-  gap: 1.5rem;
-  color: var(--white);
-  white-space: nowrap;
-}
-
-/* ---------- Wide screens: tree on the left, window on the right, status bar along the bottom ---------- */
-
-@media (min-width: 50em) {
-  .screen {
-    height: 100vh;
-    height: 100dvh;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    grid-template-rows: 1fr auto;
-  }
-
-  .sidebar {
-    display: flex;
-    flex-direction: column;
-    border-bottom: 0;
-    border-right: var(--rule) solid var(--green);
-    overflow-y: auto;
-  }
-
-  .sidebar-meta {
-    margin-top: auto;
-  }
-
-  .window {
-    overflow-y: auto;
-  }
-
-  .titlebar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: var(--black);
-  }
-
-  .statusbar {
-    grid-column: 1 / -1;
-  }
-}
-
 /* No power-on animation for people who ask for less motion. Typing and the cursor blink still run. */
 @media (prefers-reduced-motion: reduce) {
   .powering-on {
@@ -584,7 +750,7 @@ body::after {
 /* ---------- Web experiments window (sketchbook: click an experiment) ---------- */
 
 /* script.js sizes it to cover the right-hand viewport. It sits above the scanlines, so each experiment shows
-   exactly as it looks on its own. A title bar (the site's, with the shader's path) runs across the top. */
+   exactly as it looks on its own. Its path shows in the top margin's title bar (script.js). */
 .experiment-window {
   position: fixed;
   z-index: 60;
@@ -593,19 +759,178 @@ body::after {
   background: var(--black);
 }
 
-.experiment-titlebar {
+/* While an experiment is open, the file tree gives way to its info and controls (script.js), in the same place. */
+html.experiment-open .tree {
+  visibility: hidden;
+}
+
+/* Everything you can use in the sidebar (sliders, buttons) is green; [ esc ] is white. */
+.experiment-info {
+  --action: #03f900;
+  position: absolute;
+  left: var(--c2);
+  width: calc(var(--c3) - var(--c2));
+  top: var(--r3);
+  height: calc(var(--r6) - var(--r3));
+  /* One margin band's height (the blue bands in the original grid) between the sidebar's contents and the
+     experiment. */
+  padding-right: var(--band);
+  overflow-y: auto;
+  scrollbar-width: none;
+  color: var(--white);
+  font-size: var(--body-type);
+  line-height: 1.4;
+}
+
+/* The file name sits on the third row line, like the tree's root. */
+.experiment-name {
+  line-height: 1;
+}
+
+/* A line about the experiment, in italics, a few lines down. */
+.experiment-about {
+  margin-top: 3em;
+  font-style: italic;
+}
+
+/* The controls, a blank line between each. */
+.experiment-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.4em;
+  margin-top: 3em;
+}
+
+.control-row {
+  color: var(--action);
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  background: var(--black);
+  gap: 0.4em 1ch;
 }
 
-/* The path, styled like the title bar paths on other pages. */
-.experiment-path {
+/* A row of choices (cloud types, daytime/sunset): one column, left-aligned, no space between them. A blank line
+   still separates one group from the next. */
+.control-row:not(.control-slider) {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* A slider row, no brackets, always on one line: liquid ---- goo. The row spans the sidebar's full width and
+   the slider takes whatever the words leave. */
+.control-slider {
+  align-self: stretch;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.control-slider input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 2em;
+}
+
+/* Buttons: [ reset ]. Hover and keyboard focus invert them, like the site's links. */
+.control-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--action);
+  font: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+}
+
+.control-button::before {
+  content: "[ ";
+}
+
+.control-button::after {
+  content: " ]";
+}
+
+/* Choices (cloud types, daytime/sunset) have no brackets: the others are white, the current one green. */
+.control-button[aria-pressed]::before,
+.control-button[aria-pressed]::after {
+  content: none;
+}
+
+.control-button[aria-pressed="false"] {
+  color: var(--white);
+}
+
+.control-button:hover,
+.control-button:focus-visible {
+  outline: none;
+  background: var(--action);
+  color: var(--black);
+  text-shadow: none;
+}
+
+/* [ esc ]: white, two blank lines under the experiment's controls. Hover inverts it in white. */
+.experiment-esc {
+  display: block;
+  margin-top: 2.8em;
+  color: var(--white);
+}
+
+.experiment-esc:hover,
+.experiment-esc:focus-visible {
+  background: var(--white);
+}
+
+/* A readout like "50%", wide enough for "100%" so the row doesn't shift. */
+.control-output {
+  min-width: 4ch;
+  text-align: right;
+}
+
+/* Sliders: a green hairline with a block-cursor handle. */
+.experiment-info input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 1.2em;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.experiment-info input[type="range"]::-webkit-slider-runnable-track {
+  height: var(--rule);
+  background: var(--action);
+}
+
+.experiment-info input[type="range"]::-moz-range-track {
+  height: var(--rule);
+  background: var(--action);
+}
+
+.experiment-info input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 0.6em;
+  height: 1.1em;
+  margin-top: calc(-0.55em + 0.25px);
+  border: 0;
+  border-radius: 0;
+  background: var(--action);
+}
+
+.experiment-info input[type="range"]::-moz-range-thumb {
+  width: 0.6em;
+  height: 1.1em;
+  border: 0;
+  border-radius: 0;
+  background: var(--action);
+}
+
+/* The experiment's instruction in the top margin, like [ swirl it up ]: gray, like the path. */
+.titlebar-instruction {
   color: var(--gray);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* The experiment fills the rest of the window, with the close box over its top right corner. */
+/* The experiment fills the window, with the close box over its top right corner. */
 .experiment-stage {
   position: relative;
   flex: 1;
@@ -617,115 +942,6 @@ body::after {
   width: 100%;
   height: 100%;
   border: 0;
-}
-
-/* The close button: an x in a box, styled like the experiments' own controls (their slider box and sunset button):
-   20px in from the corner, a black box with a hairline white frame (the page's --rule), the status bar's 0.75rem
-   text. It inverts on hover. */
-.experiment-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  padding: 0.35rem 0.6rem;
-  border: var(--rule) solid var(--white);
-  background: rgba(0, 0, 0, 0.75);  /* 75% black, like the experiments' own buttons */
-  color: var(--white);
-  font: 100 0.75rem/1.6 var(--font);
-  cursor: pointer;
-}
-
-.experiment-close:hover,
-.experiment-close:focus-visible {
-  background: var(--white);
-  color: var(--black);
-}
-
-/* ---------- Clouds theme (while the cloud simulator is open on the sketchbook: class "clouds" on <html>) ---------- */
-
-/* The simulator fills the whole screen (script.js), and the site sits over it: the sidebar, title bar and status
-   bar become 60% black panels, like the simulator's own buttons (and the close box matches), so the sky and clouds show through them dimly.
-   Green turns white. No scanlines or vignette over the sky. */
-html.clouds {
-  --green: var(--white);
-  --glow: 0 0 6px rgba(252, 252, 252, 0.45);
-  background: #1f5fb8;  /* the simulator's sky blue, while it loads */
-}
-
-html.clouds body {
-  background: transparent;
-}
-
-html.clouds body::after {
-  display: none;
-}
-
-/* The simulator goes behind the sidebar and status bar, which stay on top. */
-html.clouds .experiment-window {
-  z-index: 1;
-  background: transparent;
-}
-
-html.clouds .sidebar {
-  position: relative;
-  z-index: 2;
-}
-
-/* The page's own title bar hides; the simulator's (with its path) takes its place, above the sky. */
-html.clouds #main .titlebar {
-  visibility: hidden;
-}
-
-html.clouds .experiment-titlebar {
-  z-index: 1;
-}
-
-html.clouds .sidebar,
-html.clouds .statusbar,
-html.clouds .experiment-titlebar,
-html.clouds .experiment-close {
-  background: rgba(0, 0, 0, 0.6);
-}
-
-html.clouds .experiment-close:hover,
-html.clouds .experiment-close:focus-visible {
-  background: var(--white);
-}
-
-/* ---------- Portfolio theme (portfolio.html, class "portfolio-theme" on <html>) ---------- */
-
-/* White background, black text and lines, no effects. It swaps the color settings, so everything (sidebar,
-   window, status bar, hovers, selection) follows. It comes before the modes, so they still work on top of it. */
-html.portfolio-theme {
-  --black: #ffffff;
-  --white: #000000;
-  --green: #000000;
-  --gray: #000000;
-  --placeholder: #ffffff;  /* the frames behind images and their captions */
-  --glow: none;
-}
-
-/* No scanlines or vignette. */
-html.portfolio-theme body::after {
-  display: none;
-}
-
-/* No uptime or clock in the status bar: just the command line. */
-html.portfolio-theme .status {
-  display: none;
-}
-
-/* The portfolio's thumbnail gallery: 3 columns on wide screens (one below the 50em breakpoint, like the rest
-   of the layout). Every thumbnail is cropped to the same 3:4 shape, so the rows line up. */
-.portfolio-gallery img {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-}
-
-@media (min-width: 50em) {
-  .portfolio-gallery {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* ---------- Silly mode (the "silly" command; "too silly" turns it off) ---------- */
@@ -852,17 +1068,6 @@ html.silly .cli input::placeholder {
 }
 
 /* On the home page and dream.html, the title bar's path is the page's h1. */
-.titlebar h1 {
-  font-size: inherit;
-}
-
-/* Home page: the dream fills the window under the title bar. On small screens it gets most of the screen. */
-.home-dream {
-  position: relative;
-  flex: 1;
-  min-height: 70vh;
-}
-
 /* ---------- Sky mode (the "sky" command; "normal" turns it off) ---------- */
 
 /* sky.js puts one canvas behind everything: it paints the sky and clouds across the whole screen.

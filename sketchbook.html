@@ -16,94 +16,63 @@
   <body>
     <a class="skip-link" href="#main">skip to content</a>
 
-    <div class="screen">
-      <!-- Shared sidebar: identical on every page except which link has aria-current="page". Change it in all .html files. -->
-      <header class="sidebar">
-        <p class="sidebar-label" aria-hidden="true">:)</p>
-        <nav class="tree" aria-label="primary">
-          <a class="tree-root" href="index.html">~/carries-brain</a>
-          <ul>
-            <li>
-              <a class="tree-dir" href="portfolio.html">portfolio/</a>
-              <ul>
-                <li><a href="consent.html">consent/</a></li>
-                <li><a href="medica.html">medica/</a></li>
-                <li><a href="thrivent.html">thrivent/</a></li>
-                <li><a href="ahip.html">ahip/</a></li>
-                <li><a href="two-mules.html">two-mules/</a></li>
-              </ul>
-            </li>
-            <li>
-              <a class="tree-dir" aria-current="page" href="sketchbook.html">sketchbook/</a>
-              <ul>
-                <li><a href="project-1.html">project-1/</a></li>
-              </ul>
-            </li>
-            <li><a href="resume.html">resume.txt</a></li>
-          </ul>
-        </nav>
-        <p class="sidebar-meta">carrie markusen<br>physical + digital design</p>
-      </header>
-
-      <main id="main" class="window" tabindex="-1">
+    <div class="screen" id="screen">
+      <!-- Top margin band: the mark, then the page's path and tag (project information). -->
+      <header class="band band-top">
+        <p class="band-mark"><a class="band-home" href="index.html" aria-label="home: ~/carries-brain"><span class="sidebar-label">:)</span> &lt;3 *</a></p>
         <div class="titlebar">
           <span class="titlebar-path">~/carries-brain/sketchbook/readme.txt</span>
           <span>[ read only ]</span>
         </div>
+      </header>
 
+      <!-- File tree. -->
+      <nav class="tree" aria-label="primary">
+        <a class="tree-root" href="index.html">~/carries-brain</a>
+        <ul>
+          <li>
+            <a class="tree-dir" aria-current="page" href="sketchbook.html">sketchbook/</a>
+            <ul class="tree-sub">
+              <li><a href="web-experiments.html">web-experiments</a>
+                <ul class="tree-sub">
+                  <li><a href="web-experiments.html#liquid-goo">liquid-goo.glsl</a></li>
+                  <li><a href="web-experiments.html#cloud-simulator">cloud-simulator.glsl</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+
+      <main id="main" class="window" tabindex="-1">
         <div class="window-body">
-          <section>
+          <section class="sketch-section sketch-thoughts">
             <p class="cmd">cat thoughts.txt</p>
-            <h1 class="output display">what<br>will<br>this be</h1>
-          </section>
-
-          <section>
-            <p class="cmd">ls web-experiments/</p>
-            <div class="output gallery">
-              <a href="experiments/liquid-goo.html" data-experiment="liquid goo" data-path="~/carries-brain/sketchbook/web-experiments/liquid-goo.glsl">
-                <figure class="shot">
-                  <!-- Web experiments are looping videos made from Carrie's GIFs (much smaller). They play by themselves,
-                       silently, like a GIF; the poster shows if a phone won't autoplay (iPhone Low Power Mode). Captions name
-                       them .glsl, the shader language the experiments were written in (the files themselves must stay .mp4),
-                       with the date each was made as MMDDYY. Clicking one opens the experiment itself (experiments/) in a window
-                       over the right-hand viewport (script.js); without JavaScript the link opens its page. -->
-                  <video src="images/sketchbook/liquid-goo.mp4" width="800" height="600" poster="images/sketchbook/liquid-goo-poster.jpg" autoplay muted loop playsinline aria-label="Liquid goo: an animated swirl of glossy, iridescent liquid, with black ribbons folding through bands of violet, magenta, green and pale pink, like oil on water."></video>
-                  <figcaption><span>liquid-goo.glsl</span><span>092926</span></figcaption>
-                </figure>
-              </a>
-              <a href="experiments/cloud-simulator.html" data-theme="clouds" data-experiment="cloud simulator" data-path="~/carries-brain/sketchbook/web-experiments/cloud-simulator.glsl">
-                <figure class="shot">
-                  <video src="images/sketchbook/cloud-simulator.mp4" width="800" height="600" poster="images/sketchbook/cloud-simulator-poster.jpg" autoplay muted loop playsinline aria-label="Cloud simulator: soft white clouds drifting and slowly changing shape across a deep blue sky."></video>
-                  <figcaption><span>cloud-simulator.glsl</span><span>092826</span></figcaption>
-                </figure>
-              </a>
-              <figure class="shot">
-                <img src="images/placeholder.svg" width="1600" height="1200" alt="web experiment 1 (placeholder)">
-                <figcaption><span>experiment_01.png</span><span>1600x1200</span></figcaption>
-              </figure>
-              <figure class="shot">
-                <img src="images/placeholder.svg" width="1600" height="1200" alt="web experiment 2 (placeholder)">
-                <figcaption><span>experiment_02.png</span><span>1600x1200</span></figcaption>
-              </figure>
-            </div>
-          </section>
-
-          <section>
-            <p class="cmd">echo $TIP</p>
-            <p class="output">type <span class="cmd-word">help</span> in the command line below to get around by keyboard.</p>
+            <h1 class="output display">i’m not sure what this will be</h1>
           </section>
         </div>
       </main>
 
-      <!-- Shared status bar: identical on every page. script.js runs the command line and the clock. -->
-      <footer class="statusbar">
+      <!-- Bottom margin band: the command line, then uptime and clock. script.js runs both. -->
+      <footer class="band band-bottom statusbar">
         <form class="cli" id="cli" autocomplete="off">
           <label for="cli-input">carrie@brain ~&gt;</label>
           <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
         </form>
-        <p class="cli-output" id="cli-output" aria-live="polite"></p>
         <p class="status"><span id="uptime"></span><span id="clock"></span></p>
       </footer>
+
+      <!-- Golden-ratio grid lines (hidden in styles.css). -->
+      <div class="grid-lines" aria-hidden="true">
+        <span class="h h1"></span><span class="h h2"></span><span class="h h3"></span><span class="h h4"></span>
+        <span class="h h5"></span><span class="h h6"></span><span class="h h7"></span><span class="h h8"></span>
+        <span class="v v1"></span><span class="v v2"></span><span class="v v3"></span><span class="v v4"></span>
+        <span class="v v5"></span><span class="v v6"></span><span class="v v7"></span><span class="v v8"></span>
+      </div>
+    </div>
+    <!-- The command line's replies: outside the screen, so they sit above everything else on the site. -->
+    <div class="response">
+      <p class="response-line"><span class="cli-output" id="cli-output" aria-live="polite"></span></p>
     </div>
   </body>
 </html>
