@@ -684,7 +684,16 @@ function setupExperiments() {
           el.className = "control-button";
           el.textContent = String(item.text || "");
           if (typeof item.pressed === "boolean") el.setAttribute("aria-pressed", String(item.pressed));
-          el.addEventListener("click", () => send({ press: id }));
+          if (item.action === "fullscreen") {
+            // [ full screen ]: the experiment's frame fills the screen. Esc comes back to the site.
+            el.addEventListener("click", () => {
+              const frame = open && open.frame;
+              const go = frame && (frame.requestFullscreen || frame.webkitRequestFullscreen);
+              if (go) go.call(frame);
+            });
+          } else {
+            el.addEventListener("click", () => send({ press: id }));
+          }
         } else {
           el = document.createElement("span");
           el.className = item.kind === "output" ? "control-output" : "control-text";
@@ -749,6 +758,7 @@ function setupExperiments() {
       const frame = document.createElement("iframe");
       frame.src = link.href;
       frame.title = link.dataset.experiment;
+      frame.allow = "fullscreen";
       const stage = document.createElement("div");
       stage.className = "experiment-stage";
       stage.append(frame);

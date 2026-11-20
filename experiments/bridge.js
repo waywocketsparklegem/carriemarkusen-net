@@ -3,7 +3,8 @@
   The experiment calls bridgeControls(container, rows): the container (its own controls) is hidden, and the rows
   are described to the site, which draws them in its own style. Each row is a list of elements:
     <input type="range">  a slider
-    <button>              a button (aria-pressed, if it has one, marks a choice that's on or off)
+    <button>              a button (aria-pressed, if it has one, marks a choice that's on or off; data-site-action
+                          "fullscreen" makes the site fill the screen with the experiment instead of clicking it)
     <output>              a readout that changes, like "50%"
     anything else         words, like "liquid" or "goo"
   When the site's copy is used, the real control here is clicked or moved, so the experiment works as it always
@@ -31,7 +32,9 @@ function bridgeControls(container, rows) {
       const pressed = el.getAttribute('aria-pressed');
       // Its words only: the site draws the brackets.
       const text = el.textContent.trim().replace(/^\[\s*/, '').replace(/\s*\]$/, '');
-      return { kind: 'button', id: idOf(el), text,
+      // data-site-action asks the site to do something itself, like "fullscreen" (filling the screen with the
+      // experiment's frame has to be done by the site).
+      return { kind: 'button', id: idOf(el), text, action: el.dataset.siteAction || null,
                pressed: pressed === null ? null : pressed === 'true' };
     }
     if (el.tagName === 'OUTPUT') return { kind: 'output', id: idOf(el), text: el.textContent.trim() };

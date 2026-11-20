@@ -39,11 +39,18 @@
     color: #fcfcfc;
     font: 100 0.75rem/1.6 "JetBrains Mono", ui-monospace, Menlo, monospace;
   }
+  /* On a narrow window the controls wrap onto more lines rather than running off the left edge. */
   #controls {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
-    gap: 1.5rem;
+    gap: 0.25rem 1.5rem;
+    max-width: calc(100vw - 40px - 1.2rem);
+    box-sizing: border-box;
   }
+  #controls > *, #controls input { flex: none; }
+  #controls button { white-space: nowrap; }
   #controls label { display: flex; align-items: center; gap: 0.75rem; }
   #controls input[type=range] {
     -webkit-appearance: none;
@@ -72,7 +79,7 @@
     border-radius: 0;
     background: #fcfcfc;
   }
-  #scramble {
+  #controls button {
     padding: 0 0.2rem;
     border: 0;
     background: none;
@@ -80,8 +87,8 @@
     font: inherit;
     cursor: pointer;
   }
-  #scramble:hover, #scramble:focus-visible { background: #fcfcfc; color: #000000; }
-  #scramble:focus-visible, #controls input:focus-visible { outline: 0.5px dashed #fcfcfc; outline-offset: 3px; }
+  #controls button:hover, #controls button:focus-visible { background: #fcfcfc; color: #000000; }
+  #controls button:focus-visible, #controls input:focus-visible { outline: 0.5px dashed #fcfcfc; outline-offset: 3px; }
   #fallback {
     position: fixed;
     inset: 0;
@@ -102,13 +109,16 @@
     <span class="end">goo</span></label>
   <label for="hue"><span class="end">color</span>
     <input id="hue" type="range" min="0" max="1" step="0.01" value="0" aria-label="Color: turns every color in the goo around the color wheel"></label>
-  <label for="bright"><span class="end">brightness</span>
-    <input id="bright" type="range" min="0" max="1" step="0.01" value="1" aria-label="Brightness"></label>
+  <label for="iris"><span class="end">iridescence</span>
+    <input id="iris" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Iridescence: how strongly the rainbow sheen shows where the goo is stirred"></label>
+  <label for="gloss"><span class="end">gloss</span>
+    <input id="gloss" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Gloss: how much the surface shines"></label>
   <label for="turb"><span class="end">turbulence</span>
     <input id="turb" type="range" min="0" max="1" step="0.01" value="0" aria-label="Turbulence: random bubbles welling up through the goo"></label>
   <label for="speed"><span class="end">speed</span>
     <input id="speed" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Speed, from slow motion to fast"></label>
   <button id="scramble" type="button">[ scramble ]</button>
+  <button id="fullscreen" type="button" data-site-action="fullscreen">[ full screen ]</button>
 </div>
 </div>
 <div id="fallback">Your browser doesn't support WebGL2 float textures, so the film can't render.</div>
@@ -138,7 +148,8 @@ const SATURATION = 1.7;      // punches the photo's colour up to match the film 
 const GHOST_RADIUS = 0.12;   // an unseen slow "hand" keeps the film moving on its own
 const GHOST_PUSH = 0.12;
 const GHOST_SPEED = 1.0;     // 1 = crosses the image in roughly 25 seconds
-const MEMORY = 30;           // seconds for the goo to ease back toward its original layout (0 = never)
+const MEMORY = 3600;         // seconds for the goo to ease back toward its original layout (0 = never). Was 30;
+                             // an hour since 2026-11-20, per Carrie, so the photo comes back only very slowly
 const HEAL = 20;             // seconds for piled-up or thinned film to settle back
 const BUMP = 900.0;          // how strongly thickness slopes tilt the surface
 const GLOSS = 0.35;
@@ -418,7 +429,7 @@ void main() {
   // thin-film colour has changed because the film was stretched or piled up.
   display: program(`
 uniform sampler2D uFilm, uOrig, uPhoto, uLut, uLight;
-uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN, uHue, uBright;
+uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN, uHue, uIris;
 // The color slider: turns every color around the color wheel (around the gray axis), uHue in turns.
 vec3 hueTurn(vec3 c, float turns) {
   float a = turns * 6.28318530718;
@@ -445,12 +456,12 @@ void main() {
   vec3 now = texture(uLut, vec2(f.x * cosT / uSpan, 0.5)).rgb;
   vec3 was = texture(uLut, vec2(f.y / uSpan, 0.5)).rgb;
   vec3 light = texture(uLight, uv).rgb * 2.5;
-  vec3 col = texture(uPhoto, film.yz).rgb + (now - was) * light;
+  vec3 col = texture(uPhoto, film.yz).rgb + (now - was) * light * uIris;   // the iridescence slider
   vec3 L = normalize(vec3(-0.45, 0.55, 1.0));
   vec3 Hh = normalize(L + vec3(0, 0, 1));
   float spec = max(pow(max(dot(n, Hh), 0.0), 40.0) - pow(Hh.z, 40.0), 0.0);
   col += uGloss * spec;
-  o = vec4(clamp(hueTurn(toSrgb(col), uHue), 0.0, 1.0) * uBright, 1.0);   // the brightness slider dims it
+  o = vec4(clamp(hueTurn(toSrgb(col), uHue), 0.0, 1.0), 1.0);
 }`),
 };
 
@@ -499,11 +510,20 @@ viscInput.addEventListener('input', () => { visc = +viscInput.value; });
 const hueInput = document.getElementById('hue');
 let hue = +hueInput.value;
 hueInput.addEventListener('input', () => { hue = +hueInput.value; });
-// Brightness: all the way right is full brightness; all the way left still shows the goo, at BRIGHT_MIN.
-const BRIGHT_MIN = 0.1;
-const brightInput = document.getElementById('bright');
-let bright = +brightInput.value;
-brightInput.addEventListener('input', () => { bright = +brightInput.value; });
+// Iridescence and gloss: the middle of each slider (0.5, the default) is the goo as it was.
+// mid(v, lo, normal, hi): 0 gives lo, the middle gives normal, 1 gives hi, in even steps on each side.
+const mid = (v, lo, normal, hi) => (v < 0.5 ? lerp(lo, normal, v * 2) : lerp(normal, hi, (v - 0.5) * 2));
+const IRIS_MAX = 3;          // iridescence: 0 = no sheen, just the photo smeared; 1 = as it was; up to 3x
+const GLOSS_MAX = 4;         // gloss: 0 = matte; up to 4x the original shine
+const slider = (id, use) => {
+  const input = document.getElementById(id);
+  const read = () => use(+input.value);
+  input.addEventListener('input', read);
+  read();
+};
+let iris = 1, gloss = GLOSS;
+slider('iris', (v) => { iris = mid(v, 0, 1, IRIS_MAX); });
+slider('gloss', (v) => { gloss = mid(v, 0, GLOSS, GLOSS * GLOSS_MAX); });
 const turbInput = document.getElementById('turb');
 let turb = +turbInput.value;
 turbInput.addEventListener('input', () => { turb = +turbInput.value; });
@@ -517,8 +537,8 @@ const speedOf = (v) => Math.pow(SPEED_RANGE, (v - 0.5) * 2);
 let speed = speedOf(+speedInput.value);
 speedInput.addEventListener('input', () => { speed = speedOf(+speedInput.value); });
 // [ scramble ]: stirs the film with a random mix (see the scramble shader) for a random 0.5 to 2 seconds, sends
-// the ghost push on a new path, and sets the liquid/goo and color sliders to random places (brightness,
-// turbulence and speed stay as they are). Every part is re-rolled each click:
+// the ghost push on a new path, and sets the liquid/goo, color, iridescence and gloss sliders to random
+// places (turbulence and speed stay as they are). Every part is re-rolled each click:
 // how many blobs (2 to 12), what kind each is, where, how big, how strong, how stretched, and the shear waves.
 let scrambleLeft = 0, scrambleTime = 1, scrambleCount = 0, waveMix = 0;
 const blobs = new Float32Array(48), kinds = new Float32Array(48), shears = new Float32Array(12);
@@ -542,7 +562,7 @@ document.getElementById('scramble').addEventListener('click', () => {
   waveMix = shears[3] || shears[7] || shears[11] ? rnd(0.15, 0.4) : 0;
   scrambleTime = scrambleLeft = rnd(0.5, 2);
   Object.assign(GHOST_PATH, newGhostPath());
-  for (const input of [viscInput, hueInput]) {
+  for (const input of [viscInput, hueInput, document.getElementById('iris'), document.getElementById('gloss')]) {
     input.value = Math.random().toFixed(2);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -669,7 +689,7 @@ function step(frameDt) {
 function draw() {
   run(P.display, null, {
     uFTexel: fTexel, uScale: view.scale, uOffset: view.offset, uSpan: DATA.span,
-    uBump: BUMP, uGloss: GLOSS, uN: DATA.n, uHue: hue, uBright: lerp(BRIGHT_MIN, 1, bright),
+    uBump: BUMP, uGloss: gloss, uN: DATA.n, uHue: hue, uIris: iris,
   }, { uFilm: film.a.tex, uOrig: filmOrig.tex, uPhoto: photo.tex, uLut: lutTex, uLight: lightTex });
 }
 
@@ -703,6 +723,18 @@ Promise.all([loadImage('data:image/png;base64,' + DATA.png), loadImage('data:ima
   .catch(fail);
 })();
 </script>
+<script>
+  // [ full screen ]: on its own page, fills the screen (Esc or a second click comes back). Inside the site, the
+  // site's sidebar copy makes the experiment's frame fill the screen instead (data-site-action, see bridge.js).
+  document.getElementById('fullscreen').addEventListener('click', () => {
+    const doc = document;
+    if (doc.fullscreenElement || doc.webkitFullscreenElement) (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc);
+    else {
+      const el = doc.documentElement;
+      (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    }
+  });
+</script>
 <script src="bridge.js"></script>
 <script>
   // Inside carriemarkusen.net, these controls move to the site's sidebar (bridge.js).
@@ -713,12 +745,15 @@ Promise.all([loadImage('data:image/png;base64,' + DATA.png), loadImage('data:ima
       [ends[0], document.getElementById('visc'), ends[1]],
       [],
       [ends[2], document.getElementById('hue')],
-      [ends[3], document.getElementById('bright')],
+      [ends[3], document.getElementById('iris')],
+      [ends[4], document.getElementById('gloss')],
       [],
-      [ends[4], document.getElementById('turb')],
-      [ends[5], document.getElementById('speed')],
+      [ends[5], document.getElementById('turb')],
+      [ends[6], document.getElementById('speed')],
       [],
       [document.getElementById('scramble')],
+      [],
+      [document.getElementById('fullscreen')],
     ]);
   }
 </script>
