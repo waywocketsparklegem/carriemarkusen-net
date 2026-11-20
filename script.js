@@ -590,9 +590,10 @@ if (!document.getElementById("boot")) {
 /* ---------- 4. Web experiments (sketchbook) ---------- */
 
 // Clicking an experiment opens it in a window that exactly covers the right-hand viewport. While it's open:
-// - the top margin shows the experiment's own location, and on the right an instruction (data-tag on its link);
+// - the top margin shows the experiment's own location, and on the right the nav tip [ press esc ] (Esc closes it);
+// - the command line's hint gives context: data-hint on its link, until the experiment sends its own ({ hint });
 // - the file tree gives way to the experiment's info: its file name, a line about it (data-about on its link), its
-//   controls, and [ esc ] to close it (so does the Esc key). The experiment hides its own controls when it's shown here and sends a description of them
+//   controls. The experiment hides its own controls when it's shown here and sends a description of them
 //   (experiments/bridge.js); the sidebar draws them in the site's style and passes clicks and slider moves back.
 // The experiments are listed in the file tree too: on the web-experiments page they open the same way; from other
 // pages they go to web-experiments.html#<name>, which opens that one as the page loads.
@@ -605,22 +606,21 @@ function setupExperiments() {
   const root = document.documentElement;
   const pathLabel = document.querySelector(".titlebar-path");
   const pagePath = pathLabel ? pathLabel.textContent : "";
-  // The title bar's tag on the right, like "[ read only ]". It becomes [ esc ] while an experiment is open.
+  // The title bar's tag on the right, like "[ explore ]": nav tips and info. It says [ press esc ] while an
+  // experiment is open. (The command line's hint is for context.)
   const tagLabel = pathLabel && pathLabel.nextElementSibling;
   const pageTag = tagLabel ? tagLabel.textContent : "";
-  const bandTop = document.querySelector(".band-top");
   const tree = document.querySelector(".tree");
   let open = null;
 
   const treeLink = (id) => document.querySelector(`.tree a[href$="#${id}"]`);
 
-  // Cover the visible part of the right-hand viewport: inside the screen, one band below the top band, and above
-  // the status bar.
+  // Cover the window (which already starts one band below the top band), kept inside the screen and above the
+  // status bar.
   function place() {
     if (!open) return;
     const box = main.getBoundingClientRect();
-    const gap = bandTop ? bandTop.offsetHeight : 0;
-    const top = Math.max(box.top + gap, 0);
+    const top = Math.max(box.top, 0);
     const bottom = Math.min(box.bottom, window.innerHeight, statusbar ? statusbar.getBoundingClientRect().top : Infinity);
     Object.assign(open.window.style, {
       top: `${top}px`,
@@ -647,15 +647,8 @@ function setupExperiments() {
     }
     const controls = document.createElement("div");
     controls.className = "experiment-controls";
-    // [ esc ]: closes the experiment, back to the page. It sits under the experiment's own controls.
-    const esc = document.createElement("button");
-    esc.type = "button";
-    esc.className = "control-button experiment-esc";
-    esc.textContent = "esc";
-    esc.setAttribute("aria-label", `close ${link.dataset.experiment}`);
-    esc.addEventListener("click", close);
-    info.append(controls, esc);
-    return { info, controls, esc };
+    info.append(controls);
+    return { info, controls };
   }
 
   // Draw the controls an experiment described: rows of text, sliders, buttons and readouts.
@@ -667,6 +660,7 @@ function setupExperiments() {
     const send = (message) => open.frame.contentWindow.postMessage(message, "*");
     for (const row of rows.slice(0, 20)) {
       if (!Array.isArray(row)) continue;
+      // (An empty row draws nothing, which leaves an extra blank line: experiments use it to group controls.)
       const line = document.createElement("div");
       line.className = "control-row";
       // A row with a slider in it stays on one line: liquid ---- goo.
@@ -726,10 +720,8 @@ function setupExperiments() {
       tagLabel.classList.remove("titlebar-instruction");
     }
     if (location.hash) history.replaceState(null, "", location.pathname + location.search);
-    if (experimentHint) {
-      experimentHint = "";
-      showHint();
-    }
+    experimentHint = "";
+    showHint();
     open.link.focus({ preventScroll: true });
     open = null;
     clearOutput();
@@ -752,7 +744,8 @@ function setupExperiments() {
       const win = document.createElement("div");
       win.className = "experiment-window";
       win.setAttribute("role", "dialog");
-      win.setAttribute("aria-label", link.dataset.experiment);
+      win.setAttribute("aria-label", `${link.dataset.experiment} (press esc to close)`);
+      win.tabIndex = -1;
       const frame = document.createElement("iframe");
       frame.src = link.href;
       frame.title = link.dataset.experiment;
@@ -763,7 +756,7 @@ function setupExperiments() {
       document.body.appendChild(win);
 
       // The sidebar's info and controls take the file tree's place.
-      const { info, controls, esc } = makeInfo(link);
+      const { info, controls } = makeInfo(link);
       if (tree) tree.after(info);
       root.classList.add("experiment-open");
 
@@ -771,12 +764,15 @@ function setupExperiments() {
 
       // The top margin: the experiment's location, and its instruction (in gray) if it has one.
       if (pathLabel) pathLabel.textContent = link.dataset.path || link.dataset.experiment;
-      if (tagLabel && link.dataset.tag) {
-        tagLabel.textContent = link.dataset.tag;
+      if (tagLabel) {
+        tagLabel.textContent = "[ press esc ]";
         tagLabel.classList.add("titlebar-instruction");
       }
-      // Opened from the keyboard, [ esc ] takes focus so Enter closes it.
-      if (event.detail === 0) esc.focus({ preventScroll: true });
+      // The command line's hint: context for the experiment (data-hint on its link).
+      experimentHint = link.dataset.hint || "";
+      showHint();
+      // Opened from the keyboard, the window takes focus (Esc closes it).
+      if (event.detail === 0) win.focus({ preventScroll: true });
       if (link.id) history.replaceState(null, "", `#${link.id}`);
       frame.addEventListener("load", place);
       place();
@@ -800,10 +796,15 @@ function setupExperiments() {
   if (start && start.matches("a[data-experiment]")) start.click();
 
   // Messages from the open experiment: its controls ({ controls } and { state }), a new about line for the
-  // sidebar ({ about }), and the command line's hint ({ hint }, the cloud simulator sends these). Nothing else is listened to.
+  // sidebar ({ about }), the command line's hint ({ hint }, the cloud simulator sends these), and Esc ({ escape }). Nothing else is listened to.
   window.addEventListener("message", (event) => {
     if (!open || event.source !== open.frame.contentWindow) return;
     const data = event.data || {};
+    // Esc pressed inside the experiment (bridge.js passes it on, since the keyboard belongs to the frame).
+    if (data.escape === true) {
+      close();
+      return;
+    }
     if (data.controls) drawControls(data.controls);
     if (data.state) updateControls(data.state);
     // A new about line for the sidebar (the cloud simulator sends each cloud type's description).
@@ -823,7 +824,7 @@ function setupExperiments() {
   });
 
   // Esc closes the window first (before it would end a mode). Once you click into an experiment, the keyboard
-  // belongs to it, so use [ esc ] in the sidebar.
+  // belongs to it, so bridge.js passes its Esc up as { escape: true } (handled above).
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && open) {
       event.stopPropagation();

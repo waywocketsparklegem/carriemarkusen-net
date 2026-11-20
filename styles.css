@@ -12,7 +12,7 @@
   --white: #fcfcfc;
   --green: #03f900;
 
-  /* Gray, for data text only (the title bar path). It matches how the white [ read only ] and uptime
+  /* Gray, for data text only (the title bar path). It matches how the white [ explore ] and uptime
      look once the vignette darkens the corners. */
   --gray: #a8a8a8;
 
@@ -246,17 +246,17 @@ body::after {
 
 /* The grid fills the window. Column lines are a share of the window's width (vw), row lines a share of its
    height (dvh), so the grid stretches with the window and keeps its proportions.
-   Measured from Carrie's "layout experiment" PDFs (1280 x 791). */
+   Rows measured from Carrie's "layout experiment" PDFs (1280 x 791); columns from "new net grid" (2026-11-19).
+   c1 and c6 sit one margin A in from the edges. From c2 to c6 are four equal columns; each column's content
+   starts one margin A to the right of its line (the gutter) and runs to the next line. */
 :root {
   /* Column lines */
   --c1: 2.103vw;
-  --c2: 3.459vw;
-  --c3: 14.590vw;
-  --c4: 38.197vw;
-  --c5: 61.803vw;
-  --c6: 85.410vw;
-  --c7: 96.541vw;
-  --c8: 97.897vw;
+  --c2: 14.590vw;
+  --c3: 35.417vw;
+  --c4: 56.244vw;
+  --c5: 77.070vw;
+  --c6: 97.897vw;
 
   /* Row lines */
   --r1: 3.403vh;
@@ -268,17 +268,16 @@ body::after {
   --r7: 94.403vh;
   --r8: 96.597vh;
 
-  /* The margin bands' height. */
+  /* The margin bands' height (margin B, blue in Carrie's grid PDFs). */
   --band: 2.194vh;
+  /* Margin A (purple in the PDFs): the outer margin, and the gutter after each column line. Across it's
+     the first column line, down it's the first row line. */
+  --margin-a: var(--c1);
+  --margin-a-y: var(--r1);
   /* Type sizes, as a share of the band height: margin type (":) <3 *" and the command line) and body
      type (everything else). Change the numbers to resize. */
   --margin-type: calc(var(--band) * 0.9);
   --body-type: calc(var(--band) * 0.6);
-
-  /* Padding inside the content area: the outer margin's size (the first column line's width across,
-     the first row line's height down). */
-  --pad-x: var(--c2);
-  --pad-y: var(--r2);
 
   /* Grid lines: the site's white, partly see-through. */
   --grid-line: rgba(252, 252, 252, 0.55);
@@ -332,14 +331,13 @@ body::after {
 .v1 { left: var(--c1); } .v2 { left: var(--c2); }
 .v3 { left: var(--c3); } .v4 { left: var(--c4); }
 .v5 { left: var(--c5); } .v6 { left: var(--c6); }
-.v7 { left: var(--c7); } .v8 { left: var(--c8); }
 
-/* Margin bands: between the first two row lines (top) and the last two (bottom), from the inner left
-   margin line to the inner right one. */
+/* Margin bands: between the first two row lines (top) and the last two (bottom), from the first column line
+   to the last. */
 .band {
   position: absolute;
-  left: var(--c2);
-  width: calc(var(--c7) - var(--c2));
+  left: var(--c1);
+  width: calc(var(--c6) - var(--c1));
   height: var(--band);
   line-height: 1;
   white-space: nowrap;
@@ -370,11 +368,12 @@ body::after {
   transform: translateY(0.14em);
 }
 
-/* Top band: the page's path (project information) from the second column line, and its tag (additional
-   project information) on the right. Body type size, sitting on the band's bottom edge. */
+/* Top band: the page's path (project information) from the window's left edge (one margin A after the second
+   column line), and its tag (additional project information) on the right. Body type size, sitting on the
+   band's bottom edge. */
 .band .titlebar {
   position: absolute;
-  left: calc(var(--c3) - var(--c2));
+  left: calc(var(--c2) + var(--margin-a) - var(--c1));
   right: 0;
   bottom: 0;
   display: flex;
@@ -451,12 +450,12 @@ body::after {
   transform: translateY(-0.13em);
 }
 
-/* The file tree: from the inner left margin line to the second column line, from the third row line down to
-   the sixth, text at the top. Body type size, a flat list with a blank line under the root. */
+/* The file tree: from the first column line to the second, from the third row line down to the sixth, text
+   at the top. Body type size, a flat list with a blank line under the root. */
 .tree {
   position: absolute;
-  left: var(--c2);
-  width: calc(var(--c3) - var(--c2));
+  left: var(--c1);
+  width: calc(var(--c2) - var(--c1));
   top: var(--r3);
   height: calc(var(--r6) - var(--r3));
   overflow: hidden;
@@ -490,13 +489,13 @@ body::after {
   color: var(--black);
 }
 
-/* The command line's replies: from the inner left margin line to the third column line, from the sixth row
-   line down to one band's height above the bottom band. The newest line sits at the bottom; longer replies
+/* The command line's replies: from the first column line to the third (the end of the first content column),
+   from the sixth row line down to one band's height above the bottom band. The newest line sits at the bottom; longer replies
    scroll. Body type size. */
 .response {
   position: fixed;
-  left: var(--c2);
-  width: calc(var(--c4) - var(--c2));
+  left: var(--c1);
+  width: calc(var(--c3) - var(--c1));
   top: var(--r6);
   height: calc(var(--r7) - var(--band) - var(--r6));
   z-index: 1000;  /* above everything else on the site: experiments, scanlines, modes */
@@ -523,14 +522,14 @@ body::after {
   pointer-events: auto;
 }
 
-/* The window (the dream on the home page): from the second column line to the inner right margin line,
-   from under the top band down to one band's height above the bottom band. */
+/* The window (the dream on the home page): from one margin A after the second column line to the last
+   column line, from one band below the top band down to one band above the bottom band. */
 .window {
   position: absolute;
-  left: var(--c3);
-  width: calc(var(--c7) - var(--c3));
-  top: var(--r2);
-  height: calc(var(--r7) - var(--band) - var(--r2));
+  left: calc(var(--c2) + var(--margin-a));
+  width: calc(var(--c6) - var(--c2) - var(--margin-a));
+  top: calc(var(--r2) + var(--band));
+  height: calc(var(--r7) - var(--r2) - 2 * var(--band));
 }
 
 .window:focus {
@@ -562,34 +561,35 @@ body::after {
   margin-top: var(--band);
 }
 
-/* cat thoughts.txt: from the third column line to the inner right margin line. The command sits on the third
-   row line, and the big header starts one band below it, wrapping onto as many lines as it needs. */
+/* cat thoughts.txt: across all four columns, from the first column's content edge (the window's left edge).
+   The command sits on the third row line, and the big header starts one band below it, wrapping onto as many
+   lines as it needs. (Its size is unchanged from the old grid.) */
 .sketch-thoughts {
   position: absolute;
-  top: calc(var(--r3) - var(--r2));
-  left: calc(var(--c4) - var(--c3));
+  top: calc(var(--r3) - var(--r2) - var(--band));
+  left: 0;
   right: 0;
 }
 
 .sketch-thoughts .display {
-  font-size: calc((var(--r3) - var(--r2) - var(--pad-y) - var(--body-type) - var(--band)) / 0.73);
+  font-size: calc((var(--r3) - 2 * var(--r2) - var(--body-type) - var(--band)) / 0.73);
   line-height: 1.1;
 }
 
-/* ls web-experiments/ (web-experiments page): from the third column line; the command sits on the third row
-   line. Two columns, each from a column line to one margin short of the next, so the margin is the gap
-   between them. */
+/* ls web-experiments/ (web-experiments page): the 4-column grid, from the first column's content edge (the
+   window's left edge); the command sits on the third row line. Thumbnails fill the columns in order, each
+   column's content one margin A wide of its line, so margin A is the gap between them. */
 .sketch-experiments {
   position: absolute;
-  top: calc(var(--r3) - var(--r2));
-  left: calc(var(--c4) - var(--c3));
+  top: calc(var(--r3) - var(--r2) - var(--band));
+  left: 0;
   right: 0;
 }
 
 .sketch-experiments .gallery {
   display: grid;
-  grid-template-columns: repeat(2, calc(var(--c4) - var(--c3) - var(--pad-x)));
-  column-gap: var(--pad-x);
+  grid-template-columns: repeat(4, calc(var(--c3) - var(--c2) - var(--margin-a)));
+  column-gap: var(--margin-a);
 }
 
 .sketch-experiments .shot {
@@ -764,17 +764,14 @@ html.experiment-open .tree {
   visibility: hidden;
 }
 
-/* Everything you can use in the sidebar (sliders, buttons) is green; [ esc ] is white. */
+/* Everything you can use in the sidebar (sliders, buttons) is green. */
 .experiment-info {
   --action: #03f900;
   position: absolute;
-  left: var(--c2);
-  width: calc(var(--c3) - var(--c2));
+  left: var(--c1);
+  width: calc(var(--c2) - var(--c1));
   top: var(--r3);
   height: calc(var(--r6) - var(--r3));
-  /* One margin band's height (the blue bands in the original grid) between the sidebar's contents and the
-     experiment. */
-  padding-right: var(--band);
   overflow-y: auto;
   scrollbar-width: none;
   color: var(--white);
@@ -791,6 +788,7 @@ html.experiment-open .tree {
 .experiment-about {
   margin-top: 3em;
   font-style: italic;
+  white-space: pre-line;  /* a line break in data-about (&#10;) starts a new line */
 }
 
 /* The controls, a blank line between each. */
@@ -831,7 +829,7 @@ html.experiment-open .tree {
   min-width: 2em;
 }
 
-/* Buttons: [ reset ]. Hover and keyboard focus invert them, like the site's links. */
+/* Buttons: [ scramble ] and choices. Hover and keyboard focus invert them, like the site's links. */
 .control-button {
   padding: 0;
   border: 0;
@@ -868,16 +866,15 @@ html.experiment-open .tree {
   text-shadow: none;
 }
 
-/* [ esc ]: white, two blank lines under the experiment's controls. Hover inverts it in white. */
-.experiment-esc {
-  display: block;
-  margin-top: 2.8em;
+/* Bracketed buttons that do something ([ scramble ]) are white, and hover inverts them in white. */
+.control-button:not([aria-pressed]) {
   color: var(--white);
 }
 
-.experiment-esc:hover,
-.experiment-esc:focus-visible {
+.control-button:not([aria-pressed]):hover,
+.control-button:not([aria-pressed]):focus-visible {
   background: var(--white);
+  color: var(--black);
 }
 
 /* A readout like "50%", wide enough for "100%" so the row doesn't shift. */
@@ -925,7 +922,7 @@ html.experiment-open .tree {
   background: var(--action);
 }
 
-/* The experiment's instruction in the top margin, like [ swirl it up ]: gray, like the path. */
+/* The top margin's tag while an experiment is open ([ press esc ]): gray, like the path. */
 .titlebar-instruction {
   color: var(--gray);
 }

@@ -107,13 +107,13 @@
 <body>
 <canvas id="sky"></canvas>
 <div id="controls">
+  <!-- The script below adds a button for each cloud type. -->
+  <div class="bar" id="types" role="group" aria-label="cloud type"></div>
   <div class="bar">
     <label for="cover">cover</label>
     <input id="cover" type="range" min="0" max="100" step="1" value="50">
     <output id="cover-value" for="cover">50%</output>
   </div>
-  <!-- The script below adds a button for each cloud type. -->
-  <div class="bar" id="types" role="group" aria-label="cloud type"></div>
   <div class="bar" role="group" aria-label="time of day">
     <button id="daytime" type="button" aria-pressed="true">daytime</button>
     <button id="sunset" type="button" aria-pressed="false">sunset</button>
@@ -513,8 +513,9 @@ void main() {
 <script>
   // Inside carriemarkusen.net, these controls move to the site's sidebar (bridge.js).
   bridgeControls(document.getElementById('controls'), [
-    [document.querySelector('label[for="cover"]'), document.getElementById('cover'), document.getElementById('cover-value')],
     [...document.querySelectorAll('#types button')],
+    [document.querySelector('label[for="cover"]'), document.getElementById('cover'), document.getElementById('cover-value')],
+    [],   // an empty row: an extra blank line in the sidebar
     [document.getElementById('daytime'), document.getElementById('sunset')],
   ]);
 </script>

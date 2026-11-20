@@ -72,3 +72,11 @@ function bridgeControls(container, rows) {
     }
   });
 }
+
+// Inside the site's frame, the keyboard belongs to the experiment once it's clicked, so Esc is passed up to the
+// site, which closes the experiment. On its own page, Esc does nothing here.
+if (window.parent !== window) {
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') window.parent.postMessage({ escape: true }, '*');
+  });
+}

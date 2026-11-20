@@ -28,21 +28,21 @@
       --r7: 94.403%;
       --r8: 96.597%;
 
-      /* Layout 1, desktop (φ : 1): margins on both sides, 4 main columns */
+      /* Layout 1, desktop (φ : 1), from "new net grid.pdf" (2026-11-19): margin A on both sides (c1, c6),
+         the nav from c1 to c2, then 4 equal columns from c2 to c6. Each column's content starts one margin A
+         (2.103%) after its line. */
       --c1: 2.103%;
-      --c2: 3.459%;
-      --c3: 14.590%;
-      --c4: 38.197%;
-      --c5: 61.803%;
-      --c6: 85.410%;
-      --c7: 96.541%;
-      --c8: 97.897%;
+      --c2: 14.590%;
+      --c3: 35.417%;
+      --c4: 56.244%;
+      --c5: 77.070%;
+      --c6: 97.897%;
 
       /* Top / bottom margin bands (the blue areas) */
       --band-color: #4a4dd2;
       --band-height: 2.194vh;           /* r2 - r1, also used as font size */
-      --band-left: var(--c2);
-      --band-right: calc(100% - var(--c7));
+      --band-left: var(--c1);
+      --band-right: calc(100% - var(--c6));
     }
     @supports (height: 1dvh) {
       :root { --band-height: 2.194dvh; }
@@ -59,7 +59,6 @@
         --c6: 96.597%;
         --band-right: calc(100% - var(--c5));
       }
-      .v7, .v8 { display: none; }
     }
 
     /* Layout 3, mobile (1 : φ): left margins only, 2 main columns */
@@ -101,7 +100,6 @@
     .v1 { left: var(--c1); } .v2 { left: var(--c2); }
     .v3 { left: var(--c3); } .v4 { left: var(--c4); }
     .v5 { left: var(--c5); } .v6 { left: var(--c6); }
-    .v7 { left: var(--c7); } .v8 { left: var(--c8); }
 
     /* Margin bands: text size equals band height, baseline sits on the band's bottom edge */
     .margin {
@@ -143,7 +141,6 @@
     <span class="v v1"></span><span class="v v2"></span>
     <span class="v v3"></span><span class="v v4"></span>
     <span class="v v5"></span><span class="v v6"></span>
-    <span class="v v7"></span><span class="v v8"></span>
   </div>
 </body>
 </html>

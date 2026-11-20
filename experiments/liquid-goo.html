@@ -72,7 +72,7 @@
     border-radius: 0;
     background: #fcfcfc;
   }
-  #reset {
+  #scramble {
     padding: 0 0.2rem;
     border: 0;
     background: none;
@@ -80,8 +80,8 @@
     font: inherit;
     cursor: pointer;
   }
-  #reset:hover, #reset:focus-visible { background: #fcfcfc; color: #000000; }
-  #reset:focus-visible, #controls input:focus-visible { outline: 0.5px dashed #fcfcfc; outline-offset: 3px; }
+  #scramble:hover, #scramble:focus-visible { background: #fcfcfc; color: #000000; }
+  #scramble:focus-visible, #controls input:focus-visible { outline: 0.5px dashed #fcfcfc; outline-offset: 3px; }
   #fallback {
     position: fixed;
     inset: 0;
@@ -100,7 +100,15 @@
   <label for="visc"><span class="end">liquid</span>
     <input id="visc" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Viscosity, from thin liquid to thick goo">
     <span class="end">goo</span></label>
-  <button id="reset" type="button">[ reset ]</button>
+  <label for="hue"><span class="end">color</span>
+    <input id="hue" type="range" min="0" max="1" step="0.01" value="0" aria-label="Color: turns every color in the goo around the color wheel"></label>
+  <label for="bright"><span class="end">brightness</span>
+    <input id="bright" type="range" min="0" max="1" step="0.01" value="1" aria-label="Brightness"></label>
+  <label for="turb"><span class="end">turbulence</span>
+    <input id="turb" type="range" min="0" max="1" step="0.01" value="0" aria-label="Turbulence: random bubbles welling up through the goo"></label>
+  <label for="speed"><span class="end">speed</span>
+    <input id="speed" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Speed, from slow motion to fast"></label>
+  <button id="scramble" type="button">[ scramble ]</button>
 </div>
 </div>
 <div id="fallback">Your browser doesn't support WebGL2 float textures, so the film can't render.</div>
@@ -136,6 +144,8 @@ const BUMP = 900.0;          // how strongly thickness slopes tilt the surface
 const GLOSS = 0.35;
 
 // ---------------------------------------------------------------- helpers
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a, b) => a + Math.random() * (b - a);
 function shader(type, src) {
   const s = gl.createShader(type);
   gl.shaderSource(s, src);
@@ -349,6 +359,52 @@ void main() {
   o = max(h, 0.0);
 }`),
 
+  // [ scramble ]: a random mix of stirs for a moment. Up to 12 blobs, each uS (x, y, radius, strength) and
+  // uK (kind, direction x, direction y, stretch): kind 0 swirls, 1 shoves in a straight line, 2 puffs out or
+  // pinches in (strength's sign). Stretch > 1 draws the blob out along its direction into a streak. Plus up to
+  // 3 shear waves, each uW (wave x, wave y, phase, strength): bands of film sliding past each other.
+  scramble: program(`
+uniform sampler2D uVel; uniform vec4 uS[12], uK[12], uW[3]; uniform int uCount;
+uniform float uAspect, uAmount, uWaveMix;
+void main() {
+  vec2 v = texture(uVel, vUv).xy;
+  vec2 p = vUv; p.x *= uAspect;
+  vec2 push = vec2(0.0); float w = 0.0;
+  for (int i = 0; i < 12; i++) {
+    if (i >= uCount) break;
+    vec4 s = uS[i], k = uK[i];
+    vec2 d = vUv - s.xy; d.x *= uAspect;
+    vec2 dir = k.yz, side = vec2(-dir.y, dir.x);
+    vec2 e = vec2(dot(d, dir) / k.w, dot(d, side));   // stretched along dir
+    float g = exp(-dot(e, e) / (s.z * s.z));
+    vec2 f = k.x < 0.5 ? vec2(-d.y, d.x) / s.z : (k.x < 1.5 ? dir : d / s.z);
+    push += f * s.w * g;
+    w = max(w, g);
+  }
+  vec2 waves = vec2(0.0);
+  for (int i = 0; i < 3; i++) {
+    vec2 kv = uW[i].xy;
+    waves += normalize(vec2(-kv.y, kv.x) + 1e-6) * uW[i].w * sin(dot(p, kv) + uW[i].z);
+  }
+  v = mix(v, waves, uWaveMix * uAmount);
+  o = vec4(mix(v, push, w * uAmount), 0.0, 1.0);
+}`),
+
+  // The turbulence slider: up to 8 bubbles, each uB (x, y, radius, strength), well up and push the film outward
+  // from their centres (or pull it in, if strength is negative).
+  bubbles: program(`
+uniform sampler2D uVel; uniform vec4 uB[8]; uniform int uBCount; uniform float uAspect;
+void main() {
+  vec2 v = texture(uVel, vUv).xy;
+  for (int i = 0; i < 8; i++) {
+    if (i >= uBCount) break;
+    vec2 d = vUv - uB[i].xy; d.x *= uAspect;
+    float g = exp(-dot(d, d) / (uB[i].z * uB[i].z));
+    v = mix(v, d / uB[i].z * uB[i].w, g * 0.5);
+  }
+  o = vec4(v, 0.0, 1.0);
+}`),
+
   // Piled-up or thinned film slowly settles back to the thickness it had.
   heal: program(`
 uniform sampler2D uFilm; uniform float uRate;
@@ -362,7 +418,13 @@ void main() {
   // thin-film colour has changed because the film was stretched or piled up.
   display: program(`
 uniform sampler2D uFilm, uOrig, uPhoto, uLut, uLight;
-uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN;
+uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN, uHue, uBright;
+// The color slider: turns every color around the color wheel (around the gray axis), uHue in turns.
+vec3 hueTurn(vec3 c, float turns) {
+  float a = turns * 6.28318530718;
+  vec3 k = vec3(0.57735026919);
+  return c * cos(a) + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - cos(a));
+}
 vec3 toSrgb(vec3 c) {
   c = clamp(c, 0.0, 1.0);
   return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
@@ -388,7 +450,7 @@ void main() {
   vec3 Hh = normalize(L + vec3(0, 0, 1));
   float spec = max(pow(max(dot(n, Hh), 0.0), 40.0) - pow(Hh.z, 40.0), 0.0);
   col += uGloss * spec;
-  o = vec4(toSrgb(col), 1.0);
+  o = vec4(clamp(hueTurn(toSrgb(col), uHue), 0.0, 1.0) * uBright, 1.0);   // the brightness slider dims it
 }`),
 };
 
@@ -434,7 +496,57 @@ function resetFilm() {
 const viscInput = document.getElementById('visc');
 let visc = +viscInput.value;
 viscInput.addEventListener('input', () => { visc = +viscInput.value; });
-document.getElementById('reset').addEventListener('click', resetFilm);
+const hueInput = document.getElementById('hue');
+let hue = +hueInput.value;
+hueInput.addEventListener('input', () => { hue = +hueInput.value; });
+// Brightness: all the way right is full brightness; all the way left still shows the goo, at BRIGHT_MIN.
+const BRIGHT_MIN = 0.1;
+const brightInput = document.getElementById('bright');
+let bright = +brightInput.value;
+brightInput.addEventListener('input', () => { bright = +brightInput.value; });
+const turbInput = document.getElementById('turb');
+let turb = +turbInput.value;
+turbInput.addEventListener('input', () => { turb = +turbInput.value; });
+// Speed: the middle (0.5, the default) is the original speed; the ends are a tenth as fast and ten times as
+// fast (SPEED_RANGE), even steps between. It only changes the goo's own motion while it rests: the drift, the
+// ghost push, the pull back toward its original layout, and turbulence's bubbles. Dragging through it and
+// [ scramble ] always move it at the same speed.
+const SPEED_RANGE = 10;
+const speedInput = document.getElementById('speed');
+const speedOf = (v) => Math.pow(SPEED_RANGE, (v - 0.5) * 2);
+let speed = speedOf(+speedInput.value);
+speedInput.addEventListener('input', () => { speed = speedOf(+speedInput.value); });
+// [ scramble ]: stirs the film with a random mix (see the scramble shader) for a random 0.5 to 2 seconds, sends
+// the ghost push on a new path, and sets the liquid/goo and color sliders to random places (brightness,
+// turbulence and speed stay as they are). Every part is re-rolled each click:
+// how many blobs (2 to 12), what kind each is, where, how big, how strong, how stretched, and the shear waves.
+let scrambleLeft = 0, scrambleTime = 1, scrambleCount = 0, waveMix = 0;
+const blobs = new Float32Array(48), kinds = new Float32Array(48), shears = new Float32Array(12);
+const sign = () => (Math.random() < 0.5 ? -1 : 1);
+document.getElementById('scramble').addEventListener('click', () => {
+  scrambleCount = 2 + Math.floor(Math.random() * 11);
+  // Each scramble leans toward one kind of motion, with the others mixed in.
+  const lean = Math.floor(Math.random() * 3);
+  for (let i = 0; i < 12; i++) {
+    const kind = Math.random() < 0.55 ? lean : Math.floor(Math.random() * 3);
+    const a = rnd(0, 2 * Math.PI);
+    const strength = kind === 0 ? rnd(80, 340) : kind === 1 ? rnd(60, 300) : rnd(60, 260);
+    blobs.set([rnd(0, 1), rnd(0, 1), rnd(0.04, 0.3), strength * sign()], i * 4);
+    kinds.set([kind, Math.cos(a), Math.sin(a), Math.random() < 0.5 ? 1 : rnd(1.5, 5)], i * 4);
+  }
+  for (let i = 0; i < 3; i++) {
+    const on = Math.random() < 0.5, a = rnd(0, 2 * Math.PI), f = rnd(4, 30);
+    shears.set([Math.cos(a) * f, Math.sin(a) * f, rnd(0, 2 * Math.PI), on ? rnd(60, 260) : 0], i * 4);
+  }
+  // How hard the velocity is pulled toward the shear waves (none, if no wave is on).
+  waveMix = shears[3] || shears[7] || shears[11] ? rnd(0.15, 0.4) : 0;
+  scrambleTime = scrambleLeft = rnd(0.5, 2);
+  Object.assign(GHOST_PATH, newGhostPath());
+  for (const input of [viscInput, hueInput]) {
+    input.value = Math.random().toFixed(2);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
 
 let view = { scale: [1, 1], offset: [0, 0] };
 let pointer = null, pending = [0, 0], pointerUv = [0, 0], pointerOn = false;
@@ -444,6 +556,7 @@ function toFilmUv(x, y) {
   const sx = (x - r.left) / r.width, sy = 1 - (y - r.top) / r.height;
   return [sx * view.scale[0] + view.offset[0], sy * view.scale[1] + view.offset[1]];
 }
+
 canvas.addEventListener('pointermove', (e) => {
   const uv = toFilmUv(e.clientX, e.clientY);
   if (pointer) { pending[0] += uv[0] - pointer[0]; pending[1] += uv[1] - pointer[1]; }
@@ -465,17 +578,39 @@ addEventListener('resize', resize);
 resize();
 
 // ---------------------------------------------------------------- loop
-const lerp = (a, b, t) => a + (b - a) * t;
 const vTexel = [1 / VW, 1 / VH], fTexel = [1 / W, 1 / H];
 const DT = 1 / 60;
 let time = 0, last = performance.now(), press = 0;
-// The ghost push's path is re-rolled on every visit.
-const rnd = (a, b) => a + Math.random() * (b - a);
-const GHOST_PATH = { fx: rnd(0.08, 0.13), fy: rnd(0.055, 0.1), px: rnd(0, 2 * Math.PI), py: rnd(0, 2 * Math.PI),
-                     ax: rnd(0.25, 0.36), ay: rnd(0.2, 0.3) };
+// The ghost push's path is re-rolled on every visit (and by [ scramble ]).
+const newGhostPath = () => ({ fx: rnd(0.08, 0.13), fy: rnd(0.055, 0.1), px: rnd(0, 2 * Math.PI), py: rnd(0, 2 * Math.PI),
+                              ax: rnd(0.25, 0.36), ay: rnd(0.2, 0.3) });
+const GHOST_PATH = newGhostPath();
+
+// Turbulence (0 = none, the goo as it always was; 1 = lots of bubbles). Bubbles start at random moments and
+// places, more often, bigger and stronger the higher the slider. Each swells for a moment, pushing film aside,
+// then fades.
+const BUBBLES_MAX = 8;
+let bubbles = [];
+const bubbleData = new Float32Array(BUBBLES_MAX * 4);
+function bubble() {
+  if (turb <= 0 && !bubbles.length) return;
+  if (bubbles.length < BUBBLES_MAX && Math.random() < turb * 0.06 * speed) {
+    bubbles.push({ x: rnd(0, 1), y: rnd(0, 1), r: rnd(0.03, 0.04 + 0.12 * turb), s: rnd(40, 80 + 220 * turb) * sign(),
+                   age: 0, life: rnd(0.3, 1.2) });
+  }
+  bubbles.forEach((b, i) => {
+    const t = b.age / b.life, swell = Math.sin(Math.PI * t);   // grows, then fades
+    bubbleData.set([b.x, b.y, b.r * (0.4 + 0.6 * t), b.s * swell * speed], i * 4);
+    b.age += DT * speed;
+  });
+  const count = bubbles.length;
+  bubbles = bubbles.filter((b) => b.age < b.life);
+  gl.useProgram(P.bubbles.p); gl.uniform1i(P.bubbles.u.uBCount, count);   // an int: run() sets floats
+  run(P.bubbles, vel.b, { 'uB[0]': bubbleData, uAspect: W / H }, { uVel: vel.a.tex }); vel.swap();
+}
 
 function step(frameDt) {
-  time += DT;
+  time += DT * speed;   // the drift's and ghost push's clock: the speed slider
   // Slider: 0 = thin liquid (glides, light touch), 1 = thick goo (heavy, sheet-like).
   const damp = lerp(0.992, 0.9, visc);
   const alpha = lerp(0.05, 6.0, visc * visc);
@@ -494,15 +629,23 @@ function step(frameDt) {
   // back and forth across the film without ever circling.
   const g = GHOST_PATH, gt = time * GHOST_SPEED;
   const ghost = [0.5 + g.ax * Math.sin(gt * g.fx + g.px), 0.5 + g.ay * Math.sin(gt * g.fy + g.py)];
-  const ghostVel = [g.ax * g.fx * GHOST_SPEED * Math.cos(gt * g.fx + g.px) * VW,
-                    g.ay * g.fy * GHOST_SPEED * Math.cos(gt * g.fy + g.py) * VH];
+  const ghostVel = [g.ax * g.fx * GHOST_SPEED * Math.cos(gt * g.fx + g.px) * VW * speed,
+                    g.ay * g.fy * GHOST_SPEED * Math.cos(gt * g.fy + g.py) * VH * speed];
   run(P.forces, vel.b, {
     uAspect: W / H, uRadius: PUSH_RADIUS, uPush: push, uDamp: damp, uTime: time,
-    uDrift: DRIFT,
+    uDrift: DRIFT * speed,
     uMouse: pointerUv, uMouseVel: mv, uMouseOn: moving ? 1 : 0,
     uGhost: ghost, uGhostVel: ghostVel, uGhostRadius: GHOST_RADIUS, uGhostPush: GHOST_PUSH,
-    uVSize: [VW, VH], uMemory: MEMORY > 0 ? 1 / MEMORY : 0,
+    uVSize: [VW, VH], uMemory: MEMORY > 0 ? speed / MEMORY : 0,
   }, { uVel: vel.a.tex, uFilm: film.a.tex }); vel.swap();
+  if (scrambleLeft > 0) {
+    gl.useProgram(P.scramble.p); gl.uniform1i(P.scramble.u.uCount, scrambleCount);   // an int: run() sets floats
+    run(P.scramble, vel.b, { 'uS[0]': blobs, 'uK[0]': kinds, 'uW[0]': shears, uAspect: W / H, uWaveMix: waveMix,
+                             uAmount: 0.6 * Math.min(1, scrambleLeft / 0.4, (scrambleTime - scrambleLeft + DT) / 0.15) },
+        { uVel: vel.a.tex }); vel.swap();
+    scrambleLeft -= DT;
+  }
+  bubble();
 
   // viscous diffusion (solve against the pre-diffusion field; dt 0 = copy)
   run(P.advectVel, vel0, { uTexel: vTexel, uDt: 0 }, { uVel: vel.a.tex });
@@ -526,7 +669,7 @@ function step(frameDt) {
 function draw() {
   run(P.display, null, {
     uFTexel: fTexel, uScale: view.scale, uOffset: view.offset, uSpan: DATA.span,
-    uBump: BUMP, uGloss: GLOSS, uN: DATA.n,
+    uBump: BUMP, uGloss: GLOSS, uN: DATA.n, uHue: hue, uBright: lerp(BRIGHT_MIN, 1, bright),
   }, { uFilm: film.a.tex, uOrig: filmOrig.tex, uPhoto: photo.tex, uLut: lutTex, uLight: lightTex });
 }
 
@@ -566,8 +709,16 @@ Promise.all([loadImage('data:image/png;base64,' + DATA.png), loadImage('data:ima
   {
     const ends = document.querySelectorAll('#controls .end');
     bridgeControls(document.getElementById('ui'), [
+      // An empty row is an extra blank line in the sidebar, grouping the sliders.
       [ends[0], document.getElementById('visc'), ends[1]],
-      [document.getElementById('reset')],
+      [],
+      [ends[2], document.getElementById('hue')],
+      [ends[3], document.getElementById('bright')],
+      [],
+      [ends[4], document.getElementById('turb')],
+      [ends[5], document.getElementById('speed')],
+      [],
+      [document.getElementById('scramble')],
     ]);
   }
 </script>
