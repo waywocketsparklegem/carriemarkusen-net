@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" data-start-mode="holo">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>carries-brain | carrie's brain</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,400;1,100;1,400&amp;display=swap">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+    <script src="sky.js" defer></script>
+    <script src="rage.js" defer></script>
+    <script src="dream.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">skip to content</a>
+
+    <div class="screen" id="screen">
+      <!-- Top margin band: the mark, then the page's path and tag (project information). -->
+      <header class="band band-top">
+        <p class="band-mark"><a class="band-home" href="index.html" aria-label="home: ~/carries-brain"><span class="sidebar-label">:)</span> &lt;3 *</a></p>
+        <div class="titlebar">
+          <h1 class="titlebar-path">~/carries-brain/</h1>
+          <span id="dream-hint">[ explore ]</span>
+        </div>
+      </header>
+
+      <!-- File tree (green container in the mockup). -->
+      <nav class="tree" aria-label="primary">
+        <a class="tree-root" aria-current="page" href="carries-brain.html">~/carries-brain</a>
+        <ul>
+          <li>
+            <a class="tree-dir" href="sketchbook.html">sketchbook/</a>
+            <ul class="tree-sub">
+              <li><a href="web-experiments.html">web-experiments</a>
+                <ul class="tree-sub">
+                  <li><a href="web-experiments.html#liquid-goo">liquid-goo.glsl</a></li>
+                  <li><a href="web-experiments.html#cloud-sim">cloud-sim.glsl</a></li>
+                  <li><a href="web-experiments.html#slime-brain">slime-brain.glsl</a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+
+      <main id="main" class="window" tabindex="-1">
+        <!-- The dream: dream.js grows a brain here, starting from a :). -->
+        <div class="home-dream">
+          <canvas class="dream-canvas" id="dream" aria-label="a brain growing its own folds, starting from a smiley face"></canvas>
+        </div>
+      </main>
+
+      <!-- Bottom margin band: the command line, then uptime and clock. script.js runs both. -->
+      <footer class="band band-bottom statusbar">
+        <form class="cli" id="cli" autocomplete="off">
+          <label for="cli-input">carrie@brain ~&gt;</label>
+          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
+        </form>
+        <p class="status"><span id="uptime"></span><span id="clock"></span></p>
+      </footer>
+
+      <!-- Golden-ratio grid lines. -->
+      <div class="grid-lines" aria-hidden="true">
+        <span class="h h1"></span><span class="h h2"></span><span class="h h3"></span><span class="h h4"></span>
+        <span class="h h5"></span><span class="h h6"></span><span class="h h7"></span><span class="h h8"></span>
+        <span class="v v1"></span><span class="v v2"></span><span class="v v3"></span>
+        <span class="v v4"></span><span class="v v5"></span><span class="v v6"></span>
+      </div>
+    </div>
+    <!-- The command line's replies: outside the screen, so they sit above everything else on the site. -->
+    <div class="response">
+      <p class="response-line"><span class="cli-output" id="cli-output" aria-live="polite"></span></p>
+    </div>
+  </body>
+</html>

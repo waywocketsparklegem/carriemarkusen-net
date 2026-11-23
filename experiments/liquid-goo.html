@@ -109,6 +109,8 @@
     <span class="end">goo</span></label>
   <label for="hue"><span class="end">color</span>
     <input id="hue" type="range" min="0" max="1" step="0.01" value="0" aria-label="Color: turns every color in the goo around the color wheel"></label>
+  <label for="huespeed"><span class="end">color speed</span>
+    <input id="huespeed" type="range" min="0" max="1" step="0.01" value="0" aria-label="Color speed: keeps turning the color slider on its own, faster the higher it goes"></label>
   <label for="iris"><span class="end">iridescence</span>
     <input id="iris" type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Iridescence: how strongly the rainbow sheen shows where the goo is stirred"></label>
   <label for="gloss"><span class="end">gloss</span>
@@ -509,7 +511,27 @@ let visc = +viscInput.value;
 viscInput.addEventListener('input', () => { visc = +viscInput.value; });
 const hueInput = document.getElementById('hue');
 let hue = +hueInput.value;
-hueInput.addEventListener('input', () => { hue = +hueInput.value; });
+let hueAuto = false;   // true while color speed moves the slider (so the slider's rounding doesn't stall it)
+hueInput.addEventListener('input', () => { if (!hueAuto) hue = +hueInput.value; });
+// Color speed: 0 (the default) leaves the color alone; higher keeps turning it around the color wheel, in turns
+// per second. Squared, so the low end is fine-grained: 0.1 takes about 3 minutes for a full turn, 1 takes 2 seconds.
+const HUE_SPEED_MAX = 0.5;
+const hueSpeedInput = document.getElementById('huespeed');
+let hueSpeed = 0;
+const readHueSpeed = () => { hueSpeed = Math.pow(+hueSpeedInput.value, 2) * HUE_SPEED_MAX; };
+hueSpeedInput.addEventListener('input', readHueSpeed);
+readHueSpeed();
+// Turn the color, and move the color slider to match (sending an input event so the site's copy follows).
+function turnHue(dt) {
+  if (hueSpeed <= 0) return;
+  hue = (hue + hueSpeed * dt) % 1;
+  const shown = hue.toFixed(2);
+  if (shown === hueInput.value || shown === (+hueInput.value).toFixed(2)) return;
+  hueInput.value = shown;
+  hueAuto = true;
+  hueInput.dispatchEvent(new Event('input', { bubbles: true }));
+  hueAuto = false;
+}
 // Iridescence and gloss: the middle of each slider (0.5, the default) is the goo as it was.
 // mid(v, lo, normal, hi): 0 gives lo, the middle gives normal, 1 gives hi, in even steps on each side.
 const mid = (v, lo, normal, hi) => (v < 0.5 ? lerp(lo, normal, v * 2) : lerp(normal, hi, (v - 0.5) * 2));
@@ -696,6 +718,7 @@ function draw() {
 function frame(now) {
   const frameDt = Math.min(Math.max((now - last) / 1000, 1 / 240), 1 / 20);
   last = now;
+  turnHue(frameDt);
   step(frameDt);
   draw();
   requestAnimationFrame(frame);
@@ -745,11 +768,12 @@ Promise.all([loadImage('data:image/png;base64,' + DATA.png), loadImage('data:ima
       [ends[0], document.getElementById('visc'), ends[1]],
       [],
       [ends[2], document.getElementById('hue')],
-      [ends[3], document.getElementById('iris')],
-      [ends[4], document.getElementById('gloss')],
+      [ends[3], document.getElementById('huespeed')],
+      [ends[4], document.getElementById('iris')],
+      [ends[5], document.getElementById('gloss')],
       [],
-      [ends[5], document.getElementById('turb')],
-      [ends[6], document.getElementById('speed')],
+      [ends[6], document.getElementById('turb')],
+      [ends[7], document.getElementById('speed')],
       [],
       [document.getElementById('scramble')],
       [],

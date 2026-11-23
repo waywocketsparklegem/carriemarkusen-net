@@ -200,6 +200,7 @@ void main() {
 
 const canvas = document.getElementById("dream");
 const hint = document.getElementById("dream-hint");
+const hintText = hint.textContent;  // the page's own tag (like "[ explore ]"), put back when rage mode ends
 const gl = canvas.getContext("webgl2", { antialias: false });
 
 function makeProgram(fragmentSource) {
@@ -342,7 +343,7 @@ function frame(now) {
   const rageNow = document.documentElement.classList.contains("rage");
   if (rageNow !== raging) {
     rageText = rageWords;
-    hint.textContent = rageNow ? "[ move to slash ]" : "[ drag to grow ]";
+    hint.textContent = rageNow ? "[ move to slash ]" : hintText;
     setup();
   }
   raging = rageNow;

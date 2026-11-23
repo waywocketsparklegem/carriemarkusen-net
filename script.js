@@ -22,7 +22,7 @@ const bootLog = [
   "[ ok ] mounting /dev/imagination",
   "[ ok ] synapse bus online ......... 86,000,000,000 nodes",
   "[ ok ] loading palette ............ 16,777,216 colors",
-  "[ ok ] indexing ~/sketchbook ...... 1 found",
+  "[ ok ] indexing ~/carries-brain ... 3 found",
   "[ ok ] warming dream cache",
   "[ ok ] aligning memory to the northern stars",
   "",
@@ -108,35 +108,70 @@ async function runBoot() {
 
 /* ---------- 2. Command line ---------- */
 
-// Places you can go. The first name is the one shown by `ls`.
+// The pretend file system that the file tree, the title bar and the command line all share. Each place is a
+// folder (path) with the page that shows it (url). Experiments are files inside web-experiments; opening one
+// opens it over that page. `names` are shortcuts that work from anywhere ("cd sketchbook", "cd home").
 const places = [
-  { names: ["sketchbook"], url: "sketchbook.html" },
-  { names: ["web-experiments", "experiments"], url: "web-experiments.html" },
-  { names: ["~", "home", "..", "/", "carries-brain"], url: "index.html" },
+  { path: "~", url: "index.html", names: ["~", "home", "/"] },
+  { path: "~/carries-brain", url: "carries-brain.html", names: ["carries-brain"] },
+  { path: "~/carries-brain/sketchbook", url: "sketchbook.html", names: ["sketchbook"] },
+  { path: "~/carries-brain/sketchbook/web-experiments", url: "web-experiments.html", names: ["web-experiments", "experiments"] },
+  { path: "~/carries-brain/sketchbook/web-experiments/liquid-goo.glsl", url: "web-experiments.html#liquid-goo", names: ["liquid-goo"] },
+  { path: "~/carries-brain/sketchbook/web-experiments/cloud-sim.glsl", url: "web-experiments.html#cloud-sim", names: ["cloud-sim"] },
+  { path: "~/carries-brain/sketchbook/web-experiments/slime-brain.glsl", url: "web-experiments.html#slime-brain", names: ["slime-brain"] },
 ];
+const isFile = (place) => place.path.endsWith(".glsl");
 
+// The folder this page shows (home if the page isn't a place).
+const here = (() => {
+  const page = location.pathname.split("/").pop() || "index.html";
+  return places.find((place) => place.url === page) || places[0];
+})();
+
+// Finds a place from what was typed: a shortcut name, a full path (~/carries-brain/sketchbook), or a path from
+// the current folder (sketchbook, .., ../sketchbook/web-experiments).
 function findPlace(name) {
-  const clean = (name || "").toLowerCase().replace(/\/$/, "").replace(/^sketchbook\//, "");
-  return places.find((place) => place.names.includes(clean));
+  const typed = (name || "").trim().toLowerCase().replace(/\/+$/, "");
+  if (!typed) return null;
+  const named = places.find((place) => place.names.includes(typed));
+  if (named) return named;
+  const parts = typed.startsWith("~") ? [] : here.path.split("/");
+  for (const part of typed.split("/")) {
+    if (part === "" || part === ".") continue;
+    if (part === "~") parts.splice(0, parts.length, "~");
+    else if (part === "..") { if (parts.length > 1) parts.pop(); }
+    else parts.push(part);
+  }
+  const path = parts.join("/");
+  return places.find((place) => place.path === path) || null;
 }
 
 function goTo(name) {
   const place = findPlace(name);
   if (!place) return `no such file or directory: ${name || "(nothing)"}`;
-  window.location.href = place.url;
-  return `opening ${place.names[0]} ...`;
+  // An experiment on this page opens straight away; anything else is another page.
+  const link = place.url.startsWith(location.pathname.split("/").pop() + "#") && document.getElementById(place.url.split("#")[1]);
+  if (link) link.click();
+  else window.location.href = place.url;
+  return `opening ${place.path}${isFile(place) ? "" : "/"} ...`;
+}
+
+// What's in the current folder: folders end in /.
+function list() {
+  const inside = places.filter((place) => place.path.startsWith(here.path + "/") && !place.path.slice(here.path.length + 1).includes("/"));
+  return inside.map((place) => place.path.split("/").pop() + (isFile(place) ? "" : "/")).join("  ") || "(empty)";
 }
 
 const commands = {
   help: () =>
     "commands: ls, cd <place>, open <place>, whoami, pwd, date, clear, reboot, silly, holo, rage, cowsay <words>, sky, quote\n" +
-    "places:   sketchbook, web-experiments, home",
-  ls: () => "sketchbook/",
+    "places:   ~, carries-brain, sketchbook, web-experiments (or any path, like ../sketchbook)",
+  ls: list,
   cd: (name) => goTo(name || "~"),
   open: goTo,
   cat: goTo,
   whoami: () => "carrie markusen. physical + digital designer.",
-  pwd: () => document.querySelector(".titlebar-path").textContent,
+  pwd: () => here.path,
   date: () => new Date().toString().toLowerCase(),
   clear: () => "",
   reboot: () => {
@@ -364,7 +399,7 @@ function scream(line) {
   return "you have the power to escape your rage.";
 }
 
-// The command line's prompt: "carrie@brain ~>" (the ~> is drawn as one squiggly arrow).
+// The command line's prompt: "carrie@brain ~>" (the ~> is drawn as one squiggly arrow). It never shows the path.
 function setPromptName(name) {
   const label = document.querySelector('label[for="cli-input"]');
   if (label) label.textContent = name + " ~>";
@@ -405,6 +440,8 @@ function defaultHint() {
   if (experimentHint) return experimentHint;
   const root = document.documentElement;
   if (root.classList.contains("sky")) return root.classList.contains("sunset") ? "type daytime" : "type sunset";
+  // A page that opens in holo (carries-brain.html) suggests silly mode instead.
+  if (root.classList.contains("holo") && root.dataset.startMode === "holo") return "type silly";
   if (root.classList.contains("holo") || root.classList.contains("rage")) return "press esc";
   return root.classList.contains("silly") ? "type too silly" : "type help";
 }
@@ -846,4 +883,12 @@ function setupExperiments() {
 setupCli();
 setupClock();
 setupExperiments();
+
+// A page can open in a mode: <html data-start-mode="holo"> (carries-brain.html starts in holo). Esc or "normal"
+// ends it as usual. The hint suggests "silly", which swaps holo for silly mode.
+if (document.documentElement.dataset.startMode === "holo") {
+  setHolo(true);
+  const input = document.getElementById("cli-input");
+  if (input) input.placeholder = defaultHint();
+}
 runBoot();

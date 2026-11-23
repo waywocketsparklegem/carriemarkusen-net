@@ -91,17 +91,18 @@ img {
   height: auto;
 }
 
+/* No focus outlines anywhere, not even the browser's own (Carrie's choice). Links still invert on keyboard focus. */
+:focus,
+:focus-visible {
+  outline: none;
+}
+
 /* Hover and keyboard focus: inverted, like selected text in a terminal. */
 a:hover,
 a:focus-visible {
   background: var(--green);
   color: var(--black);
   text-shadow: none;
-}
-
-:focus-visible {
-  outline: 1px dashed var(--green);
-  outline-offset: 3px;
 }
 
 ::selection {
@@ -618,7 +619,9 @@ body::after {
 
 /* Hovering a thumbnail draws a hairline green frame around it. */
 .sketch-experiments .gallery a:hover video,
-.sketch-experiments .gallery a:focus-visible video {
+.sketch-experiments .gallery a:focus-visible video,
+.sketch-experiments .gallery a:hover img,
+.sketch-experiments .gallery a:focus-visible img {
   outline: var(--rule) solid var(--green);
 }
 

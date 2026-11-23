@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slime Brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;400&amp;display=swap">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000000;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none;  /* dragging grows the dream instead of scrolling */
+  }
+  /* dream.js writes its notes here (like "this dream needs a browser with webgl2"); only those are shown. */
+  #dream-hint {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    color: #fcfcfc;
+    font: 100 0.75rem/1.6 "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  #dream-hint:not(.error) { display: none; }
+</style>
+</head>
+<body>
+<!-- Slime brain: the same dream as ~/carries-brain, filling the frame. It uses the site's dream.js, so changes there show up here too. -->
+<canvas id="dream" aria-label="a brain growing its own folds, starting from a smiley face"></canvas>
+<span id="dream-hint"></span>
+<script>
+  // dream.js reads the holo mode tilt from the site's script.js; there are no modes here, so it stays still.
+  var holoTilt = { x: 0, y: 0 };
+</script>
+<script src="../dream.js"></script>
+<script>
+  // Show dream.js's note only when it's an error (it otherwise just says "[ drag to grow ]").
+  {
+    const hint = document.getElementById('dream-hint');
+    new MutationObserver(() => hint.classList.toggle('error', hint.textContent.includes('webgl'))).observe(hint, { childList: true });
+  }
+</script>
+<script src="bridge.js"></script>
+</body>
+</html>
