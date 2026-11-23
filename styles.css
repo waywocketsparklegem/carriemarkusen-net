@@ -622,6 +622,7 @@ body::after {
 .sketch-experiments .shot-dates {
   display: block;
   margin-top: 1em;  /* one blank line (the caption's line height is 1) */
+  color: var(--gray);  /* data text, like the title bar path */
 }
 
 .sketch-experiments .shot-dates span {
