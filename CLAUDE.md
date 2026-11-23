@@ -38,7 +38,43 @@ index.html          home: boot screen (first visit), then "> cat thoughts.txt" a
                     suggestions." (`.sketch-tip`). Body type. Carrie, 2026-11-23.
 carries-brain.html  ~/carries-brain: the dream (dream.js) filling the window, no boot screen; opens in holo mode
 sketchbook.html     "> cat thoughts.txt" and a big header: "plagued by concepts"
-design.html         "> ls design/": same layout as webgl, one placeholder thumbnail (no link yet); added 2026-11-23
+design.html         "> ls design/": same layout as webgl; one placeholder thumbnail, [ portfolio-grid ] (dates 112326),
+                    a plain link to portfolio-grid.html (not an experiment, so no data-experiment); added 2026-11-23
+portfolio-grid.html a design project (2026-11-23): path ~/carries-brain/sketchbook/design/portfolio-grid/, in the tree
+                    under design. Sections stacked in one column across the first two columns from r3
+                    (`.sketch-project`), three bands apart, each a command with its output one band below; the
+                    window scrolls (no visible scrollbar) when they run long. Commands don't have to be cat: mix
+                    them to fit the content. "> cat context.txt": intro paragraph (body type, white).
+                    "> ./baseline-areas": a paragraph (two columns wide): the baseline areas come from subdividing a golden
+                    rectangle, then three diagrams (`#baseline-1`..`3`, placeholders for now:
+                    `.project-diagram`, golden-ratio shape) in a `.diagram-switch`, with buttons one band below,
+                    [ baseline 1 ] [ baseline 2 ] [ baseline 3 ] (2ch apart; pressed one green, others white).
+                    Each button's aria-controls names its diagram; `setupDiagramSwitches` in script.js shows it
+                    and hides the others. A second golden rectangle (`.project-diagram-side`, placeholder,
+                    doesn't switch) sits in the third column, top-aligned with the diagram. The diagrams themselves
+                    are still to be built.
+                    "> open .com-grid-map": the .com grid map artifact on the page. A paragraph (two columns),
+                    then the drawing across all three columns (`.span-3`, an SVG drawn by `setupGridMap` in
+                    script.js: margins in the PDFs' purple/blue, bands, the name, the placeholder table, lines r1-r8
+                    and c1-c8 named in green; its text lowercase), then the key one row of three columns below:
+                    rows table (column 1), columns table (column 2), legend (column 3, right-aligned). Tables are gray with a
+                    hairline under the heading; hovering a row lights its line green in the drawing. The map's
+                    numbers are typed into setupGridMap: update them if the .com grid changes.
+                    "> curl carriemarkusen.com/about": the working site. A paragraph (two columns) on Claude
+                    Code turning the model into a responsive html/css site outside web-builder frameworks, then
+                    the live https://carriemarkusen.com/about.html in a frame (`.site-frame`) across all three
+                    columns, golden-ratio shape, white hairline. The frame stays fixed; inside it is a simulated
+                    browser window. The iframe starts at desktop size (1600 x 989) scaled to fit (`--site-scale`,
+                    set by `setupSiteFrames` in script.js). A small white corner handle (`.site-resize`) at the
+                    window's bottom right drags it smaller (down to 320 x 400, in desktop pixels; arrow keys on the
+                    handle move 40px), and the page inside lays itself out for that size, so it shows .com's
+                    tablet layout under 1000px. Once smaller than the frame the window gets its own hairline
+                    (`.site-window`). The page scrolls inside the window when it doesn't fit (until later on 2026-11-23 scrolling was off). Under the frame, [ grid on ] [ grid off ]
+                    (`.site-grid-buttons`, same style as the baseline buttons; on by default): they reload the
+                    frame at about.html?grid or about.html, and .com pages show their own grid lines with ?grid
+                    (a one-line script in .com's about/portfolio/project heads; see .com's CLAUDE.md). Needs the
+                    internet; shows whatever is pushed to .com. More to follow: the golden-ratio
+                    model, the grid maps, the responsive math. No big header (removed).
 webgl.html          "> ls webgl/" (the folder was web-experiments until 2026-11-23; web-experiments.html is now a
                     redirect to webgl.html that keeps the #experiment): thumbnails that open the experiments (two looping videos, and a placeholder for slime brain)
 styles.css          all styles
@@ -63,7 +99,7 @@ Every page is laid out on fixed grid lines (`basic-grid/basic-grid.html` shows t
 
 Every page: skip link, then `<div class="screen">` (fixed, full viewport) holding:
 - `<header class="band band-top">`: `:) <3 *` (`.band-mark`, a link home (`index.html`) with no hover state; white, except green on the home page (`<html data-page="home">`); the only link to home, which isn't in the tree; the `:)` is `.sidebar-label`, which rage and silly turn into `:(`), then `.titlebar` with the page's path (`.titlebar-path`, gray) and a tag on the right (`[ explore ]` on every page, including carries-brain since 2026-11-23). The bands run from c1 to c5; the path starts at the window's left edge (c2 + margin A).
-- `<nav class="tree">`: from c1 to c2, from r3 to r6. `~/carries-brain` (links to `carries-brain.html`), then `sketchbook/` > `webgl` > `liquid-goo.glsl`, `cloud-sim.glsl`, `slime-brain.glsl`, then `design` (a sibling of WebGL, inside sketchbook/) (nested `ul.tree-sub`, indented 2ch). All names white; only the current page's ` <` pointer is green (`aria-current="page"`). The experiment entries link to `webgl.html#<id>`.
+- `<nav class="tree">`: from c1 to c2, from r3 to r6. `~/carries-brain` (links to `carries-brain.html`), then `sketchbook/` > `webgl` > `liquid-goo.glsl`, `cloud-sim.glsl`, `slime-brain.glsl`, then `design` (a sibling of WebGL, inside sketchbook/) > `portfolio-grid` (nested `ul.tree-sub`, indented 2ch). All names gray except the current page (`aria-current="page"`), which is white with a green ` <` pointer (2026-11-23; before, all names were white). The experiment entries link to `webgl.html#<id>`.
 - `<main id="main" class="window">`: from c2 + margin A to c5, from one band below the top band (r2 + band) to one band above the bottom band. Sketchbook, WebGL and design content starts at the window's left edge (the first column's content), with the command (`<p class="cmd">`, CSS adds `> `) on r3 and its output one band (margin B) below. The sketchbook header spans all three columns; the WebGL and design thumbnails fill the columns in order (square, one column wide).
 - `<footer class="band band-bottom statusbar">`: the command line (`carrie@brain ~>`, body type size; JetBrains Mono ligatures merge `~>` into one squiggly arrow, which Carrie wants) and uptime and clock on the right, all hanging from the band's top edge.
 
@@ -104,7 +140,7 @@ Carrie's Mac has Reduce motion on. Typing and the cursor blink run for everyone 
 
 ## Command line
 
-`script.js`: help, ls (lists the current folder), cd/open/cat <place> (a bare `cd` goes home), whoami, pwd (the current folder), date, clear, reboot, sudo, exit, sky / sunset / daytime, holo, rage, normal, quote, cowsay <words>. The command line works in the file tree's pretend file system (2026-11-23): the `places` array lists each folder's path and page (`~` index.html, `~/carries-brain`, `.../sketchbook`, `.../webgl`) and the three experiments as `.glsl` files in WebGL (they open over webgl.html, `#<id>`), and `.../sketchbook/design` (design.html, shortcut `design`). `here` is the current page's folder. The prompt is always `carrie@brain ~>` and never shows the path (Carrie, 2026-11-23); `pwd` and `ls` do. `cd`/`open`/`cat` take a shortcut name from anywhere (`sketchbook`, `webgl`/`web-experiments`/`experiments`, `carries-brain`, `liquid-goo`/`cloud-sim`/`slime-brain`, `~`/`home`/`/`), a full path (`~/carries-brain/sketchbook`), or a path from the current folder (`..`, `../..`, `webgl/cloud-sim.glsl`); replies say `opening <path> ...`. The boot log line is now "indexing ~/carries-brain ... 3 found". The hint (the input's placeholder) is always italic; typed text is not. A command can set `nextHint` to suggest what to type next; an open experiment can set it too (see Web experiments). Otherwise the hint is "type help" ("type silly" on the home page: its input's placeholder, and `defaultHint` checks `data-page="home"`), or "type too silly" in silly mode. `/` focuses the command line; up/down arrows recall history. If the command line had focus when a page was left, the next page focuses it again (sessionStorage key `cli-focus`), except while the boot screen shows.
+`script.js`: help, ls (lists the current folder), cd/open/cat <place> (a bare `cd` goes home), whoami, pwd (the current folder), date, clear, reboot, sudo, exit, sky / sunset / daytime, holo, rage, normal, quote, cowsay <words>. The command line works in the file tree's pretend file system (2026-11-23): the `places` array lists each folder's path and page (`~` index.html, `~/carries-brain`, `.../sketchbook`, `.../webgl`) and the three experiments as `.glsl` files in WebGL (they open over webgl.html, `#<id>`), and `.../sketchbook/design` (design.html, shortcut `design`) with `.../design/portfolio-grid` (portfolio-grid.html, shortcut `portfolio-grid`). `here` is the current page's folder. The prompt is always `carrie@brain ~>` and never shows the path (Carrie, 2026-11-23); `pwd` and `ls` do. `cd`/`open`/`cat` take a shortcut name from anywhere (`sketchbook`, `webgl`/`web-experiments`/`experiments`, `carries-brain`, `liquid-goo`/`cloud-sim`/`slime-brain`, `~`/`home`/`/`), a full path (`~/carries-brain/sketchbook`), or a path from the current folder (`..`, `../..`, `webgl/cloud-sim.glsl`); replies say `opening <path> ...`. The boot log line is now "indexing ~/carries-brain ... 3 found". The hint (the input's placeholder) is always italic; typed text is not. A command can set `nextHint` to suggest what to type next; an open experiment can set it too (see Web experiments). Otherwise the hint is "type help" ("type silly" on the home page: its input's placeholder, and `defaultHint` checks `data-page="home"`), or "type too silly" in silly mode. `/` focuses the command line; up/down arrows recall history. If the command line had focus when a page was left, the next page focuses it again (sessionStorage key `cli-focus`), except while the boot screen shows.
 
 - `cowsay <words>`: the classic cow in a speech bubble; lines wrap at 30 characters; no words: "moo."; afterwards the hint says "type so cute", and `so cute` replaces the cow with just `:)`.
 - `quote`: the first quote in the `quotes` list the first time in a visit, then a random one, never the same twice in a row (sessionStorage key `quote`), shown in the reply area exactly as Carrie wrote it (her capitals are intentional, an exception to the site's lowercase rule). Each entry has `text` and an optional `by`, shown as the hint while the quote is up. Anything the visitor does next clears it. Carrie supplies the quotes.

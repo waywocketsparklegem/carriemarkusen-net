@@ -120,6 +120,7 @@ const places = [
   { path: "~/carries-brain/sketchbook/webgl/cloud-sim.glsl", url: "webgl.html#cloud-sim", names: ["cloud-sim"] },
   { path: "~/carries-brain/sketchbook/webgl/slime-brain.glsl", url: "webgl.html#slime-brain", names: ["slime-brain"] },
   { path: "~/carries-brain/sketchbook/design", url: "design.html", names: ["design"] },
+  { path: "~/carries-brain/sketchbook/design/portfolio-grid", url: "portfolio-grid.html", names: ["portfolio-grid"] },
 ];
 const isFile = (place) => place.path.endsWith(".glsl");
 
@@ -883,9 +884,220 @@ function setupExperiments() {
   }, true);
 }
 
+// Diagram switchers (portfolio-grid.html): each button shows its diagram (aria-controls) and hides the others in
+// the same .diagram-switch; the pressed button is green.
+function setupDiagramSwitches() {
+  document.querySelectorAll(".diagram-switch").forEach((group) => {
+    const buttons = group.querySelectorAll("button[aria-controls]");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        buttons.forEach((other) => {
+          const on = other === button;
+          other.setAttribute("aria-pressed", String(on));
+          const diagram = document.getElementById(other.getAttribute("aria-controls"));
+          if (diagram) diagram.hidden = !on;
+        });
+      });
+    });
+  });
+}
+
+// Grid map (portfolio-grid.html, #com-grid-map): a scale drawing of carriemarkusen.com's grid in its golden-ratio
+// frame (1618 x 1000 drawing units), plus the rows and columns tables. Hovering a table row lights up its line.
+// Copied from Carrie's .com grid map artifact; text is lowercase here.
+function setupGridMap() {
+  const map = document.getElementById("com-grid-map");
+  if (!map) return;
+  const svg = map.querySelector("svg");
+  const NS = "http://www.w3.org/2000/svg";
+  const W = 1618, H = 1000, PAD_L = 0, PAD_T = 46, PAD_R = 30, PAD_B = 20;
+  const X = (v) => PAD_L + v * W / 100;
+  const Y = (v) => PAD_T + v * H / 100;
+  const css = (name) => getComputedStyle(map).getPropertyValue(name).trim();
+
+  // [name, position as % of the frame, what the table shows for it, what sits there]
+  const rows = [
+    ["r1", 3.403, "3.403%", "outer margin ends; top band starts"],
+    ["r2", 5.597, "5.597%", "top band ends"],
+    ["r3", 23.607, "23.607%", "the name sits on it"],
+    ["r4", 38.197, "38.197%", "the table starts"],
+    ["r5", 61.803, "61.803%", "nothing placed on it"],
+    ["r6", 76.393, "76.393%", "nothing placed on it"],
+    ["r7", 94.403, "94.403%", "bottom band starts"],
+    ["r8", 96.597, "96.597%", "bottom band ends"],
+  ];
+  const cols = [
+    ["c1", 2.103, "= r1", "outer margin ends; square"],
+    ["c2", 3.459, "= r2", "bands, headers and the table start"],
+    ["c3", 14.590, "14.590%", "the table's second column starts"],
+    ["c4", 38.197, "38.197%", "the table ends"],
+    ["c5", 61.803, "61.803%", "the name ends"],
+    ["c6", 85.410, "85.410%", "about ends"],
+    ["c7", 96.541, "100% - r2", "bands and portfolio end"],
+    ["c8", 97.897, "100% - r1", "outer margin starts"],
+  ];
+  const R = Object.fromEntries(rows.map((r) => [r[0], r[1]]));
+  const C = Object.fromEntries(cols.map((c) => [c[0], c[1]]));
+  const B = R.r2 - R.r1;
+
+  svg.setAttribute("viewBox", `0 0 ${PAD_L + W + PAD_R} ${PAD_T + H + PAD_B}`);
+  const el = (tag, attrs, parent = svg) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  };
+  const rect = (x1, y1, x2, y2, fill, opacity = 1) =>
+    el("rect", { x: X(x1), y: Y(y1), width: X(x2) - X(x1), height: Y(y2) - Y(y1), fill, opacity });
+  const label = (x, y, text, size, attrs = {}) => {
+    const t = el("text", { x, y, "font-size": size, fill: css("--white"), "font-weight": 100, ...attrs });
+    t.textContent = text;
+    return t;
+  };
+
+  // Screen, outer margin, and the band-wide strips just inside it.
+  rect(0, 0, 100, 100, "#000");
+  const margin = css("--map-margin"), band = css("--map-band");
+  rect(0, 0, C.c1, 100, margin);
+  rect(C.c8, 0, 100, 100, margin);
+  rect(0, 0, 100, R.r1, margin);
+  rect(0, R.r8, 100, 100, margin);
+  rect(C.c1, R.r1, C.c2, R.r8, band, 0.45);
+  rect(C.c7, R.r1, C.c8, R.r8, band, 0.45);
+  rect(C.c2, R.r1, C.c7, R.r2, band);
+  rect(C.c2, R.r7, C.c7, R.r8, band);
+
+  // Band text (h1): left header, left footer, about (ends on c6) and portfolio (ends on c7), current page underlined.
+  const H1 = 17;
+  label(X(C.c2), Y(R.r2) - 3, "[left header]", H1);
+  label(X(C.c2), Y(R.r8) - 3, "[left footer]", H1);
+  label(X(C.c6), Y(R.r2) - 3, "about", H1, { "text-anchor": "end" });
+  label(X(C.c7), Y(R.r2) - 3, "portfolio", H1, { "text-anchor": "end" });
+  el("line", { x1: X(C.c6) - 5 * H1 * 0.6, x2: X(C.c6), y1: Y(R.r2), y2: Y(R.r2), stroke: css("--white"), "stroke-width": 1 });
+
+  // The name: baseline on r3, c2 to c5, letter spacing 40 (15 letters + 14 gaps = 9.56em).
+  const nameW = X(C.c5) - X(C.c2), nameSize = nameW / 9.56;
+  label(X(C.c2), Y(R.r3), "carrie markusen", nameSize, { "font-weight": 400, "letter-spacing": nameSize * 0.04 });
+
+  // Placeholder table from r4: labels c2 to c3, values c3 to c4.
+  const BODY = 11, LH = BODY * 1.6;
+  let y = Y(R.r4) + BODY * 0.73;
+  [["role", ["[role]"]], ["timeline", ["[yyyy-yyyy]"]], ["highlights", ["[highlight]", "", "[highlight]"]]].forEach(([head, lines]) => {
+    label(X(C.c2), y, head, BODY, { "font-weight": 400 });
+    lines.forEach((t, i) => { if (t) label(X(C.c3), y + i * LH, t, BODY); });
+    y += (lines.length + 2) * LH;
+  });
+
+  // Grid lines, named on the outside: row names on the right, right-aligned to the drawing's edge, so the frame's
+  // left edge lines up with the text above it; column names along the top (close pairs stagger).
+  const lines = el("g", {});
+  rows.forEach(([n, v]) => {
+    el("line", { x1: X(0), x2: X(100) + 6, y1: Y(v), y2: Y(v), stroke: "rgba(252,252,252,0.8)", "stroke-width": 1, "data-line": n }, lines);
+    const dy = n === "r1" || n === "r7" ? -2 : n === "r2" || n === "r8" ? 10 : 4;
+    label(PAD_L + W + PAD_R, Y(v) + dy, n, 13, { fill: css("--green"), "text-anchor": "end" });
+  });
+  cols.forEach(([n, v]) => {
+    el("line", { x1: X(v), x2: X(v), y1: PAD_T - 6, y2: Y(100), stroke: "rgba(252,252,252,0.8)", "stroke-width": 1, "data-line": n }, lines);
+    const anchor = n === "c1" || n === "c7" ? "end" : n === "c2" || n === "c8" ? "start" : "middle";
+    label(X(v) + (anchor === "end" ? -2 : anchor === "start" ? 2 : 0), PAD_T - 12, n, 13, { fill: css("--green"), "text-anchor": anchor });
+  });
+
+  // Tables.
+  const fill = (which, data) => {
+    const body = map.querySelector(`table[data-map="${which}"] tbody`);
+    data.forEach(([n, , shown, what]) => {
+      const tr = document.createElement("tr");
+      [n, shown, what].forEach((text) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      const line = svg.querySelector(`[data-line="${n}"]`);
+      tr.addEventListener("mouseenter", () => { tr.classList.add("is-on"); line.classList.add("is-on"); });
+      tr.addEventListener("mouseleave", () => { tr.classList.remove("is-on"); line.classList.remove("is-on"); });
+      body.appendChild(tr);
+    });
+  };
+  fill("rows", rows);
+  fill("cols", cols);
+}
+
+// Site frames (portfolio-grid.html): a simulated browser window. The page renders at desktop size
+// (1600 x 989) and is scaled to fit the frame. Dragging the corner handle (or arrow keys on it) resizes the
+// simulated window inside the fixed frame, so the page lays itself out for smaller screens; it scrolls
+// inside the window when it doesn't fit.
+function setupSiteFrames() {
+  const FULL_W = 1600, FULL_H = 989, MIN_W = 320, MIN_H = 400, STEP = 40;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  document.querySelectorAll(".site-frame").forEach((frame) => {
+    const iframe = frame.querySelector("iframe");
+    const edge = frame.querySelector(".site-window");
+    const handle = frame.querySelector(".site-resize");
+    let w = FULL_W, h = FULL_H, scale = 1;
+
+    const draw = () => {
+      scale = frame.clientWidth / FULL_W;
+      frame.style.setProperty("--site-scale", scale);
+      iframe.style.width = `${w}px`;
+      iframe.style.height = `${h}px`;
+      edge.style.width = `${w * scale}px`;
+      edge.style.height = `${h * scale}px`;
+      handle.style.left = `${w * scale - handle.offsetWidth}px`;
+      handle.style.top = `${h * scale - handle.offsetHeight}px`;
+      frame.classList.toggle("is-sized", w < FULL_W || h < FULL_H);
+    };
+    new ResizeObserver(draw).observe(frame);
+    draw();
+
+    handle.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      handle.setPointerCapture(event.pointerId);
+      frame.classList.add("is-resizing");
+    });
+    handle.addEventListener("pointermove", (event) => {
+      if (!handle.hasPointerCapture(event.pointerId)) return;
+      const box = frame.getBoundingClientRect();
+      w = clamp((event.clientX - box.left) / scale, MIN_W, FULL_W);
+      h = clamp((event.clientY - box.top) / scale, MIN_H, FULL_H);
+      draw();
+    });
+    const stop = (event) => {
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+      frame.classList.remove("is-resizing");
+    };
+    handle.addEventListener("pointerup", stop);
+    handle.addEventListener("pointercancel", stop);
+
+    // Grid on/off buttons (the .site-grid-buttons after the frame): carriemarkusen.com pages show their grid lines
+    // when the address ends in ?grid, so switching reloads the framed page with or without it. (A #grid address
+    // would make the browser scroll this page and the frame to it.)
+    const gridButtons = frame.parentElement.querySelectorAll(".site-grid-buttons button[data-grid]");
+    const base = iframe.src.split("?")[0];
+    gridButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.getAttribute("aria-pressed") === "true") return;
+        gridButtons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
+        iframe.src = base + (button.dataset.grid === "on" ? "?grid" : "");
+      });
+    });
+
+    handle.addEventListener("keydown", (event) => {
+      const moves = { ArrowLeft: [-STEP, 0], ArrowRight: [STEP, 0], ArrowUp: [0, -STEP], ArrowDown: [0, STEP] };
+      if (!moves[event.key]) return;
+      event.preventDefault();
+      w = clamp(w + moves[event.key][0], MIN_W, FULL_W);
+      h = clamp(h + moves[event.key][1], MIN_H, FULL_H);
+      draw();
+    });
+  });
+}
+
 setupCli();
 setupClock();
 setupExperiments();
+setupSiteFrames();
+setupGridMap();
+setupDiagramSwitches();
 
 // A page can open in a mode: <html data-start-mode="holo"> (carries-brain.html starts in holo). Esc or "normal"
 // ends it as usual. The hint suggests "cd sketchbook".

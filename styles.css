@@ -482,8 +482,12 @@ html[data-page="home"] .band-mark {
   padding-left: 2ch;
 }
 
-/* Every name in the tree is white; only the current page's pointer is green. */
+/* Every name in the tree is gray except the current page, which is white with a green pointer after it. */
 .tree a {
+  color: var(--gray);
+}
+
+.tree a[aria-current="page"] {
   color: var(--white);
 }
 
@@ -583,6 +587,226 @@ html[data-page="home"] .band-mark {
 .sketch-thoughts .display {
   font-size: calc((var(--r3) - 2 * var(--r2) - var(--body-type) - var(--band)) / 0.73);
   line-height: 1.1;
+}
+
+/* Design projects (portfolio-grid.html): sections stacked in one column across the first two columns, from r3.
+   Each is a command with its output one band below it: body text (body type, white) or a diagram. */
+.sketch-project {
+  right: auto;
+  width: calc(var(--c4) - var(--c2) - var(--margin-a));
+}
+
+/* A long project page scrolls inside the window (no visible scrollbar), so nothing runs under the status bar. */
+.window-body:has(> .sketch-project) {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.window-body:has(> .sketch-project)::-webkit-scrollbar {
+  display: none;
+}
+
+.sketch-project {
+  padding-bottom: var(--band);
+}
+
+/* Each section after the first starts three bands below the one above it. */
+.sketch-project .sketch-section + .sketch-section {
+  margin-top: calc(var(--band) * 3);
+}
+
+/* Placeholder for an interactive diagram: the full width, in the golden-ratio frame's shape. */
+.sketch-project .project-diagram {
+  aspect-ratio: 1.618;
+  background: var(--placeholder);
+}
+
+/* A second golden rectangle in the third column (c4 + margin A to c5), top-aligned with the diagram. The
+   section spans the first two columns, so this sits outside it, positioned from its left edge. */
+.diagram-switch {
+  position: relative;
+}
+
+.sketch-project .project-diagram-side {
+  position: absolute;
+  top: 0;
+  left: calc(var(--c4) - var(--c2));
+  width: calc(var(--c5) - var(--c4) - var(--margin-a));
+}
+
+/* Grid map (.com-grid-map): the drawing spans all three columns; under it the key:
+   the rows table in column 1, the columns table in column 2, the legend in column 3, right-aligned. Areas use the colors from Carrie's PDFs (margin A
+   purple, margin B blue). Body type; tables gray with a hairline under the heading row, line names green. */
+.sketch-project .span-3 {
+  width: calc(var(--c5) - var(--c2) - var(--margin-a));
+}
+
+.grid-map {
+  --map-margin: #7f359e;
+  --map-band: #4a4dd3;
+  --rule-gray: #545454;
+  margin-top: var(--band);
+}
+
+.grid-map-drawing {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grid-map-drawing text {
+  font-family: var(--font);
+}
+
+.grid-map-key {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--c3) - var(--c2) - var(--margin-a)));
+  column-gap: var(--margin-a);
+  margin-top: calc(var(--band) * 2);
+  font-size: var(--body-type);
+  line-height: 1.6;
+}
+
+.grid-map-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--white);
+  text-align: right;
+}
+
+.swatch {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 1ch;
+  vertical-align: -0.15em;
+}
+
+.swatch-margin { background: var(--map-margin); }
+.swatch-band { background: var(--map-band); }
+.swatch-line { height: 0; border-top: 1px solid var(--white); vertical-align: 0.3em; }
+
+.map-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--gray);
+}
+
+.map-table th,
+.map-table td {
+  padding: 0 1ch 0 0;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 100;
+}
+
+.map-table th {
+  border-bottom: var(--rule) solid var(--rule-gray);
+}
+
+.map-table td:first-child {
+  color: var(--green);
+}
+
+.map-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.map-table tr.is-on td {
+  color: var(--white);
+}
+
+.map-table td:first-child,
+.map-table tr.is-on td:first-child {
+  color: var(--green);
+}
+
+.grid-map-drawing .is-on {
+  stroke: var(--green);
+  stroke-width: 3;
+}
+
+/* The live site in a frame: all three columns wide, in the golden-ratio frame's shape, with a white hairline.
+   The page inside starts at desktop size (1600 x 989) and is scaled to fit (--site-scale, set by setupSiteFrames
+   in script.js). The handle resizes the simulated window inside the frame; the page scrolls inside it. */
+.site-frame {
+  position: relative;
+  aspect-ratio: 1.618;
+  overflow: hidden;
+  border: var(--rule) solid var(--white);
+  background: var(--black);
+}
+
+.site-frame iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  transform-origin: 0 0;
+  transform: scale(var(--site-scale, 1));
+}
+
+/* The simulated window's edge (a white hairline), shown once it's smaller than the frame. */
+.site-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: var(--rule) solid var(--white);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.site-frame.is-sized .site-window {
+  visibility: visible;
+}
+
+/* The resize handle: a small white corner at the window's bottom right. Drag it to resize the window. */
+.site-resize {
+  position: absolute;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 0;
+  background: linear-gradient(135deg, transparent 50%, var(--white) 50%);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+/* While dragging, the page inside the frame doesn't take the pointer. */
+.site-frame.is-resizing iframe {
+  pointer-events: none;
+}
+
+/* Diagram buttons, one band below the diagram: [ baseline 1 ] [ baseline 2 ] [ baseline 3 ]. The one showing
+   is green, the others white. Body type. */
+.diagram-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 2ch;
+  margin-top: var(--band);
+}
+
+.diagram-buttons button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--white);
+  font: inherit;
+  font-size: var(--body-type);
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.diagram-buttons button[aria-pressed="true"] {
+  color: var(--green);
+}
+
+.sketch-project .project-body {
+  font-size: var(--body-type);
+  line-height: 1.6;
+  color: var(--white);
 }
 
 /* "! important" and "? tip" (home page): commands on the fifth row line, their output one band below, body
