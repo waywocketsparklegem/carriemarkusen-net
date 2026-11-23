@@ -248,16 +248,16 @@ body::after {
 /* The grid fills the window. Column lines are a share of the window's width (vw), row lines a share of its
    height (dvh), so the grid stretches with the window and keeps its proportions.
    Rows measured from Carrie's "layout experiment" PDFs (1280 x 791); columns from "new net grid" (2026-11-19).
-   c1 and c6 sit one margin A in from the edges. From c2 to c6 are four equal columns; each column's content
+   c1 and c5 sit one margin A in from the edges. From c2 to c5 are three equal columns (four until 2026-11-23,
+   with c6 as the right edge); each column's content
    starts one margin A to the right of its line (the gutter) and runs to the next line. */
 :root {
   /* Column lines */
   --c1: 2.103vw;
   --c2: 14.590vw;
-  --c3: 35.417vw;
-  --c4: 56.244vw;
-  --c5: 77.070vw;
-  --c6: 97.897vw;
+  --c3: 42.359vw;
+  --c4: 70.128vw;
+  --c5: 97.897vw;
 
   /* Row lines */
   --r1: 3.403vh;
@@ -331,14 +331,14 @@ body::after {
 
 .v1 { left: var(--c1); } .v2 { left: var(--c2); }
 .v3 { left: var(--c3); } .v4 { left: var(--c4); }
-.v5 { left: var(--c5); } .v6 { left: var(--c6); }
+.v5 { left: var(--c5); }
 
 /* Margin bands: between the first two row lines (top) and the last two (bottom), from the first column line
    to the last. */
 .band {
   position: absolute;
   left: var(--c1);
-  width: calc(var(--c6) - var(--c1));
+  width: calc(var(--c5) - var(--c1));
   height: var(--band);
   line-height: 1;
   white-space: nowrap;
@@ -528,7 +528,7 @@ body::after {
 .window {
   position: absolute;
   left: calc(var(--c2) + var(--margin-a));
-  width: calc(var(--c6) - var(--c2) - var(--margin-a));
+  width: calc(var(--c5) - var(--c2) - var(--margin-a));
   top: calc(var(--r2) + var(--band));
   height: calc(var(--r7) - var(--r2) - 2 * var(--band));
 }
@@ -562,7 +562,7 @@ body::after {
   margin-top: var(--band);
 }
 
-/* cat thoughts.txt: across all four columns, from the first column's content edge (the window's left edge).
+/* cat thoughts.txt: across all three columns, from the first column's content edge (the window's left edge).
    The command sits on the third row line, and the big header starts one band below it, wrapping onto as many
    lines as it needs. (Its size is unchanged from the old grid.) */
 .sketch-thoughts {
@@ -577,7 +577,7 @@ body::after {
   line-height: 1.1;
 }
 
-/* ls web-experiments/ (web-experiments page): the 4-column grid, from the first column's content edge (the
+/* ls web-experiments/ (web-experiments page): the 3-column grid, from the first column's content edge (the
    window's left edge); the command sits on the third row line. Thumbnails fill the columns in order, each
    column's content one margin A wide of its line, so margin A is the gap between them. */
 .sketch-experiments {
@@ -589,7 +589,7 @@ body::after {
 
 .sketch-experiments .gallery {
   display: grid;
-  grid-template-columns: repeat(4, calc(var(--c3) - var(--c2) - var(--margin-a)));
+  grid-template-columns: repeat(3, calc(var(--c3) - var(--c2) - var(--margin-a)));
   column-gap: var(--margin-a);
 }
 
@@ -607,14 +607,42 @@ body::after {
 }
 
 /* Caption (experiment info): one band's height below the thumbnail, body type. */
+/* Caption: the name in brackets, then the dates (modified, made). Up to portrait-tablet width (1000px, the
+   tablet size in basic-grid.html): one block, a blank line after the name, one date per line. Wider: the dates
+   move right, aligned to the image's right edge, on one line with one space between them. */
 .sketch-experiments .shot figcaption {
-  justify-content: flex-start;
-  gap: 2ch;
+  display: block;
   margin-top: var(--band);
   padding: 0;
   border: 0;
   font-size: var(--body-type);
   line-height: 1;
+}
+
+.sketch-experiments .shot-dates {
+  display: block;
+  margin-top: 1em;  /* one blank line (the caption's line height is 1) */
+}
+
+.sketch-experiments .shot-dates span {
+  display: block;
+}
+
+@media (min-width: 1001px) {
+  .sketch-experiments .shot figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 2ch;
+  }
+
+  .sketch-experiments .shot-dates {
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  .sketch-experiments .shot-dates span {
+    display: inline;
+  }
 }
 
 /* Hovering a thumbnail draws a hairline green frame around it. */

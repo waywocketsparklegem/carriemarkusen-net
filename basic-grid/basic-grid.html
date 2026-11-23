@@ -28,22 +28,22 @@
       --r7: 94.403%;
       --r8: 96.597%;
 
-      /* Layout 1, desktop (φ : 1), from "new net grid.pdf" (2026-11-19): margin A on both sides (c1, c6),
-         the nav from c1 to c2, then 4 equal columns from c2 to c6. Each column's content starts one margin A
+      /* Layout 1, desktop (φ : 1), from "new net grid.pdf" (2026-11-19), 3 columns since 2026-11-23: margin A on
+         both sides (c1, c5), the nav from c1 to c2, then 3 equal columns from c2 to c5. Each column's content starts one margin A
          (2.103%) after its line. */
       --c1: 2.103%;
       --c2: 14.590%;
-      --c3: 35.417%;
-      --c4: 56.244%;
-      --c5: 77.070%;
-      --c6: 97.897%;
+      --c3: 42.359%;
+      --c4: 70.128%;
+      --c5: 97.897%;
 
       /* Top / bottom margin bands (the blue areas) */
       --band-color: #4a4dd2;
       --band-height: 2.194vh;           /* r2 - r1, also used as font size */
       --band-left: var(--c1);
-      --band-right: calc(100% - var(--c6));
+      --band-right: calc(100% - var(--c5));
     }
+    .v6 { display: none; }  /* desktop has no c6 */
     @supports (height: 1dvh) {
       :root { --band-height: 2.194dvh; }
     }
@@ -59,6 +59,7 @@
         --c6: 96.597%;
         --band-right: calc(100% - var(--c5));
       }
+      .v6 { display: block; }
     }
 
     /* Layout 3, mobile (1 : φ): left margins only, 2 main columns */
