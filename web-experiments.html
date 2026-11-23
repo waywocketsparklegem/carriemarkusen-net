@@ -2,100 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>web-experiments | carrie's brain</title>
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,400;1,100;1,400&amp;display=swap">
-    <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
-    <script src="sky.js" defer></script>
-    <script src="rage.js" defer></script>
+    <title>webgl | carrie's brain</title>
+    <!-- web-experiments was renamed webgl (webgl.html) on 2026-11-23. This page sends old links there,
+         keeping the #experiment part so a shared link still opens that experiment. -->
+    <script>location.replace("webgl.html" + location.hash);</script>
+    <meta http-equiv="refresh" content="0; url=webgl.html">
   </head>
   <body>
-    <a class="skip-link" href="#main">skip to content</a>
-
-    <div class="screen" id="screen">
-      <!-- Top margin band: the mark, then the page's path and tag (project information). -->
-      <header class="band band-top">
-        <p class="band-mark"><a class="band-home" href="index.html" aria-label="home: ~/carries-brain"><span class="sidebar-label">:)</span> &lt;3 *</a></p>
-        <div class="titlebar">
-          <span class="titlebar-path">~/carries-brain/sketchbook/web-experiments/</span>
-          <span>[ explore ]</span>
-        </div>
-      </header>
-
-      <!-- File tree. -->
-      <nav class="tree" aria-label="primary">
-        <a class="tree-root" href="carries-brain.html">~/carries-brain</a>
-        <ul>
-          <li>
-            <a class="tree-dir" href="sketchbook.html">sketchbook/</a>
-            <ul class="tree-sub">
-              <li><a aria-current="page" href="web-experiments.html">web-experiments</a>
-                <ul class="tree-sub">
-                  <li><a href="web-experiments.html#liquid-goo">liquid-goo.glsl</a></li>
-                  <li><a href="web-experiments.html#cloud-sim">cloud-sim.glsl</a></li>
-                  <li><a href="web-experiments.html#slime-brain">slime-brain.glsl</a></li>
-                </ul>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </nav>
-
-      <main id="main" class="window" tabindex="-1">
-        <div class="window-body">
-          <section class="sketch-section sketch-experiments">
-            <p class="cmd">ls web-experiments/</p>
-            <div class="output gallery">
-              <a id="liquid-goo" data-about="lose yourself." data-hint="swirl it up" href="experiments/liquid-goo.html" data-experiment="liquid goo" data-path="~/carries-brain/sketchbook/web-experiments/liquid-goo.glsl">
-                <figure class="shot">
-                  <!-- Looping videos made from Carrie's recordings; they play silently, like a GIF. Clicking one opens
-                       the experiment itself over the window (script.js); without JavaScript the link opens its page. -->
-                  <video src="images/sketchbook/liquid-goo.mp4" width="800" height="600" poster="images/sketchbook/liquid-goo-poster.jpg" autoplay muted loop playsinline aria-label="Liquid goo: an animated swirl of glossy, iridescent liquid, with black ribbons folding through bands of violet, magenta, green and pale pink, like oil on water."></video>
-                  <figcaption><span class="shot-name">[ liquid-goo.glsl ]</span><span class="shot-dates"><span>112026</span> <span>092926</span></span></figcaption>
-                </figure>
-              </a>
-              <a id="cloud-sim" data-about="enjoy this beautiful day :)" href="experiments/cloud-sim.html" data-experiment="cloud sim" data-path="~/carries-brain/sketchbook/web-experiments/cloud-sim.glsl">
-                <figure class="shot">
-                  <video src="images/sketchbook/cloud-sim.mp4" width="800" height="600" poster="images/sketchbook/cloud-sim-poster.jpg" autoplay muted loop playsinline aria-label="Cloud sim: soft white clouds drifting and slowly changing shape across a deep blue sky."></video>
-                  <figcaption><span class="shot-name">[ cloud-sim.glsl ]</span><span class="shot-dates"><span>111926</span> <span>092826</span></span></figcaption>
-                </figure>
-              </a>
-              <a id="slime-brain" data-about="drag to grow." data-hint="slime mold can find the shortest path through a maze" href="experiments/slime-brain.html" data-experiment="slime brain" data-path="~/carries-brain/sketchbook/web-experiments/slime-brain.glsl">
-                <figure class="shot">
-                  <!-- Placeholder until there's a looping video of the slime brain (made from a screen recording, like the others). -->
-                  <img src="images/placeholder.svg" width="800" height="600" alt="Slime brain: green folds like brain coral growing outward from a big smiley face.">
-                  <figcaption><span class="shot-name">[ slime-brain.glsl ]</span><span class="shot-dates"><span>112326</span> <span>092826</span></span></figcaption>
-                </figure>
-              </a>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <!-- Bottom margin band: the command line, then uptime and clock. script.js runs both. -->
-      <footer class="band band-bottom statusbar">
-        <form class="cli" id="cli" autocomplete="off">
-          <label for="cli-input">carrie@brain ~&gt;</label>
-          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
-        </form>
-        <p class="status"><span id="uptime"></span><span id="clock"></span></p>
-      </footer>
-
-      <!-- Grid lines (hidden in styles.css). -->
-      <div class="grid-lines" aria-hidden="true">
-        <span class="h h1"></span><span class="h h2"></span><span class="h h3"></span><span class="h h4"></span>
-        <span class="h h5"></span><span class="h h6"></span><span class="h h7"></span><span class="h h8"></span>
-        <span class="v v1"></span><span class="v v2"></span><span class="v v3"></span>
-        <span class="v v4"></span><span class="v v5"></span>
-      </div>
-    </div>
-    <!-- The command line's replies: outside the screen, so they sit above everything else on the site. -->
-    <div class="response">
-      <p class="response-line"><span class="cli-output" id="cli-output" aria-live="polite"></span></p>
-    </div>
+    <p><a href="webgl.html">this folder moved to ~/carries-brain/sketchbook/webgl/</a></p>
   </body>
 </html>

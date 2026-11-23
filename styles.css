@@ -248,16 +248,19 @@ body::after {
 /* The grid fills the window. Column lines are a share of the window's width (vw), row lines a share of its
    height (dvh), so the grid stretches with the window and keeps its proportions.
    Rows measured from Carrie's "layout experiment" PDFs (1280 x 791); columns from "new net grid" (2026-11-19).
-   c1 and c5 sit one margin A in from the edges. From c2 to c5 are three equal columns (four until 2026-11-23,
+   c1 and c5 sit one margin A in from the edges. Margin A is square at every window shape: c1 is the same
+   distance as r1 (measured on the height, so it uses r1 directly) and c5 mirrors it from the right; in the
+   PDFs' golden-ratio frame these come to 2.103vw and 97.897vw (Carrie, 2026-11-23). From c2 to c5 are three
+   equal columns, worked out from c2 and c5 (four until 2026-11-23,
    with c6 as the right edge); each column's content
    starts one margin A to the right of its line (the gutter) and runs to the next line. */
 :root {
   /* Column lines */
-  --c1: 2.103vw;
+  --c1: var(--r1);
   --c2: 14.590vw;
-  --c3: 42.359vw;
-  --c4: 70.128vw;
-  --c5: 97.897vw;
+  --c3: calc(var(--c2) + (var(--c5) - var(--c2)) / 3);
+  --c4: calc(var(--c2) + (var(--c5) - var(--c2)) * 2 / 3);
+  --c5: calc(100vw - var(--r1));
 
   /* Row lines */
   --r1: 3.403vh;
@@ -367,6 +370,11 @@ body::after {
   color: var(--white);
   font-size: var(--margin-type);
   transform: translateY(0.14em);
+}
+
+/* On the home page (<html data-page="home">), the mark is green: it's where it leads. */
+html[data-page="home"] .band-mark {
+  color: var(--green);
 }
 
 /* Top band: the page's path (project information) from the window's left edge (one margin A after the second
@@ -577,7 +585,72 @@ body::after {
   line-height: 1.1;
 }
 
-/* ls web-experiments/ (web-experiments page): the 3-column grid, from the first column's content edge (the
+/* "! important" and "? tip" (home page): commands on the fifth row line, their output one band below, body
+   type in white. "! important" fills the first two columns: a paragraph, then a table (command / action) with
+   a darker gray hairline rule under its heading row; the whole table is gray. "? tip" sits in the third column. */
+.sketch-tips,
+.sketch-tip {
+  position: absolute;
+  top: calc(var(--r5) - var(--r2) - var(--band));
+  font-size: var(--body-type);
+  line-height: 1.6;
+  color: var(--white);
+}
+
+.sketch-tips {
+  left: 0;
+  width: calc(var(--c4) - var(--c2) - var(--margin-a));  /* the first two columns */
+}
+
+.sketch-tip {
+  left: calc(var(--c4) - var(--c2));  /* the third column's content edge */
+  right: 0;
+}
+
+/* The commands' own line height stays 1, like every other command. */
+.sketch-tips .cmd,
+.sketch-tip .cmd {
+  line-height: 1;
+}
+
+/* The table's first column carries the gutter (margin A) on its right, so the action column starts on the
+   second grid column's content edge. */
+.tips-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: var(--band);
+  border-collapse: collapse;
+}
+
+.tips-table th,
+.tips-table td {
+  padding: 0;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 100;
+}
+
+.tips-table th:nth-child(1) {
+  width: calc(var(--c3) - var(--c2));
+  padding-right: var(--margin-a);
+}
+
+.tips-table td:nth-child(1) {
+  padding-right: var(--margin-a);
+}
+
+/* The whole table is gray, with a darker gray hairline rule under the heading row. #545454 is half of
+   --gray (#a8a8a8); it's this site's own, not part of the block shared with carriemarkusen.com. */
+.tips-table {
+  --rule-gray: #545454;
+  color: var(--gray);
+}
+
+.tips-table th {
+  border-bottom: var(--rule) solid var(--rule-gray);
+}
+
+/* ls webgl/ (webgl page, and the design page): the 3-column grid, from the first column's content edge (the
    window's left edge); the command sits on the third row line. Thumbnails fill the columns in order, each
    column's content one margin A wide of its line, so margin A is the gap between them. */
 .sketch-experiments {
@@ -669,6 +742,15 @@ body::after {
 .cmd::before {
   content: "> ";
   color: var(--white);
+}
+
+/* The home page's notes: "! important" (a nod to CSS's !important) and "? tip" in place of "> ". */
+.cmd-important::before {
+  content: "! ";
+}
+
+.cmd-tip::before {
+  content: "? ";
 }
 
 .output {

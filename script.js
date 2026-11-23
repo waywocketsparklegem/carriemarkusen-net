@@ -109,16 +109,17 @@ async function runBoot() {
 /* ---------- 2. Command line ---------- */
 
 // The pretend file system that the file tree, the title bar and the command line all share. Each place is a
-// folder (path) with the page that shows it (url). Experiments are files inside web-experiments; opening one
+// folder (path) with the page that shows it (url). Experiments are files inside webgl; opening one
 // opens it over that page. `names` are shortcuts that work from anywhere ("cd sketchbook", "cd home").
 const places = [
   { path: "~", url: "index.html", names: ["~", "home", "/"] },
   { path: "~/carries-brain", url: "carries-brain.html", names: ["carries-brain"] },
   { path: "~/carries-brain/sketchbook", url: "sketchbook.html", names: ["sketchbook"] },
-  { path: "~/carries-brain/sketchbook/web-experiments", url: "web-experiments.html", names: ["web-experiments", "experiments"] },
-  { path: "~/carries-brain/sketchbook/web-experiments/liquid-goo.glsl", url: "web-experiments.html#liquid-goo", names: ["liquid-goo"] },
-  { path: "~/carries-brain/sketchbook/web-experiments/cloud-sim.glsl", url: "web-experiments.html#cloud-sim", names: ["cloud-sim"] },
-  { path: "~/carries-brain/sketchbook/web-experiments/slime-brain.glsl", url: "web-experiments.html#slime-brain", names: ["slime-brain"] },
+  { path: "~/carries-brain/sketchbook/webgl", url: "webgl.html", names: ["webgl", "web-experiments", "experiments"] },
+  { path: "~/carries-brain/sketchbook/webgl/liquid-goo.glsl", url: "webgl.html#liquid-goo", names: ["liquid-goo"] },
+  { path: "~/carries-brain/sketchbook/webgl/cloud-sim.glsl", url: "webgl.html#cloud-sim", names: ["cloud-sim"] },
+  { path: "~/carries-brain/sketchbook/webgl/slime-brain.glsl", url: "webgl.html#slime-brain", names: ["slime-brain"] },
+  { path: "~/carries-brain/sketchbook/design", url: "design.html", names: ["design"] },
 ];
 const isFile = (place) => place.path.endsWith(".glsl");
 
@@ -129,7 +130,7 @@ const here = (() => {
 })();
 
 // Finds a place from what was typed: a shortcut name, a full path (~/carries-brain/sketchbook), or a path from
-// the current folder (sketchbook, .., ../sketchbook/web-experiments).
+// the current folder (sketchbook, .., ../sketchbook/webgl). Capitals don't matter.
 function findPlace(name) {
   const typed = (name || "").trim().toLowerCase().replace(/\/+$/, "");
   if (!typed) return null;
@@ -143,7 +144,7 @@ function findPlace(name) {
     else parts.push(part);
   }
   const path = parts.join("/");
-  return places.find((place) => place.path === path) || null;
+  return places.find((place) => place.path.toLowerCase() === path.toLowerCase()) || null;
 }
 
 function goTo(name) {
@@ -165,7 +166,7 @@ function list() {
 const commands = {
   help: () =>
     "commands: ls, cd <place>, open <place>, whoami, pwd, date, clear, reboot, silly, holo, rage, cowsay <words>, sky, quote\n" +
-    "places:   ~, carries-brain, sketchbook, web-experiments (or any path, like ../sketchbook)",
+    "places:   ~, carries-brain, sketchbook, webgl, design (or any path, like ../sketchbook)",
   ls: list,
   cd: (name) => goTo(name || "~"),
   open: goTo,
@@ -440,10 +441,12 @@ function defaultHint() {
   if (experimentHint) return experimentHint;
   const root = document.documentElement;
   if (root.classList.contains("sky")) return root.classList.contains("sunset") ? "type daytime" : "type sunset";
-  // A page that opens in holo (carries-brain.html) suggests silly mode instead.
-  if (root.classList.contains("holo") && root.dataset.startMode === "holo") return "type silly";
+  // A page that opens in holo (carries-brain.html) suggests going on to the sketchbook instead.
+  if (root.classList.contains("holo") && root.dataset.startMode === "holo") return "type cd sketchbook";
   if (root.classList.contains("holo") || root.classList.contains("rage")) return "press esc";
-  return root.classList.contains("silly") ? "type too silly" : "type help";
+  if (root.classList.contains("silly")) return "type too silly";
+  // The home page (<html data-page="home">) suggests silly mode.
+  return root.dataset.page === "home" ? "type silly" : "type help";
 }
 
 // Wipe the command line's reply. Any change of page does this: going to another page, coming back to one (the
@@ -632,8 +635,8 @@ if (!document.getElementById("boot")) {
 // - the file tree gives way to the experiment's info: its file name, a line about it (data-about on its link), its
 //   controls. The experiment hides its own controls when it's shown here and sends a description of them
 //   (experiments/bridge.js); the sidebar draws them in the site's style and passes clicks and slider moves back.
-// The experiments are listed in the file tree too: on the web-experiments page they open the same way; from other
-// pages they go to web-experiments.html#<name>, which opens that one as the page loads.
+// The experiments are listed in the file tree too: on the webgl page they open the same way; from other
+// pages they go to webgl.html#<name>, which opens that one as the page loads.
 // Without JavaScript, the link simply opens the experiment on its own page.
 function setupExperiments() {
   const main = document.getElementById("main");
@@ -838,7 +841,7 @@ function setupExperiments() {
     });
   }
 
-  // Arriving at web-experiments.html#<name> (from the tree on another page) opens that experiment.
+  // Arriving at webgl.html#<name> (from the tree on another page) opens that experiment.
   const start = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
   if (start && start.matches("a[data-experiment]")) start.click();
 
@@ -885,7 +888,7 @@ setupClock();
 setupExperiments();
 
 // A page can open in a mode: <html data-start-mode="holo"> (carries-brain.html starts in holo). Esc or "normal"
-// ends it as usual. The hint suggests "silly", which swaps holo for silly mode.
+// ends it as usual. The hint suggests "cd sketchbook".
 if (document.documentElement.dataset.startMode === "holo") {
   setHolo(true);
   const input = document.getElementById("cli-input");

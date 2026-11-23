@@ -1,7 +1,7 @@
 /*
   sky.exe: slowly changing clouds (the "sky" command).
 
-  From the cloud simulator in web-experiments. One canvas sits behind the whole site and paints the sky
+  From the cloud simulator (sketchbook/webgl/cloud-sim). One canvas sits behind the whole site and paints the sky
   and clouds across the whole screen, so the site's background is the sky.
   The clouds are layers of noise that slowly change shape as they drift.
   "sunset" and "daytime" fade between the two color modes; "normal" turns it off (see script.js).
