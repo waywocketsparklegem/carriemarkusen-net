@@ -88,6 +88,98 @@ sky.js              sky mode's clouds (the `sky` command), loaded on every page
 rage.js             rage mode's living veins and screams (the `rage` command), loaded on every page
 experiments/        cloud-sim.html (the cloud simulator; renamed cloud-sim 2026-11-23), liquid-goo.html, slime-brain.html (slime brain loads the site's ../dream.js; the others are self-contained; liquid-goo embeds its source photo
                     and a derived map as base64, ~950 KB), and bridge.js (moves their controls into the site)
+                    liquid-goo-dubstep.html (2026-11-24, standalone for now: not in the gallery, tree or command line, no
+                    bridge.js): liquid-goo reacting to music (dubstep). Audio from a dropped/opened file, another chrome tab's
+                    sound (getDisplayMedia, "also share tab audio"), or a line in. Song energy sets iridescence by section
+                    (calm low, build flashes on kicks/snares/screeches, drop full, gap before a drop dims and freezes the goo);
+                    hits squeeze the film where they land so the color shows. Motion
+                    escalates too: a "drive" scales every music force (calm motion when calm, climbing to full over the build
+                    ramp, full in the drop), and a drop needs at least "min build" seconds of build first. Each hit also adds an eddy (swirl) and small bubbles well
+                    up with the energy (bubbling), so the film folds and mixes instead of only being shoved. No scramble. Floating, draggable, foldable tool
+                    panels (engineering-software style; places and slider values kept in localStorage) that hide when the mouse
+                    is still (2.5 s while music plays, 10 s without), plus a status bar.
+                    Keys: f full screen, esc leaves it, x hides/shows the panels (hidden by x they stay hidden until x again).
+                    Hovering a setting's name shows a small window by the pointer describing it (each SETTINGS entry's `about`).
+                    `[ pointer on ]` / `[ pointer off ]` in the goo panel turns the pointer's push on the goo on or off (off by default; remembered).
+                    07 subwoofer panel (2026-11-24): a speaker under the middle of the goo. Kicks send rings outward (they
+                    push and squeeze the film and ripple its thickness in the display), the sub-bass pumps ripples outward
+                    continuously, and kicks thump the view toward you (a small zoom). Kick detection uses a lower threshold
+                    (3.5 dB) so kicks register over a constant sub.
+                    `[ reset goo ]` (goo panel, next to the pointer button) puts the film back to the photo and stops all motion.
+                    Rings push out ahead and pull back in behind (net zero), and a home pull slider (default 120 s; liquid-goo
+                    itself uses an hour) eases the film back to its place, so the color doesn't get pushed out of frame.
+                    The rings and pump don't draw circles: they bend the goo's own image outward and back as they pass, add
+                    only a little thickness (color), and the film's own thickness bends them out of round (ragged slider).
+                    liquid/goo goes thicker than liquid-goo's: its whole range is the first 60% of the slider (default 0.3,
+                    like liquid-goo's middle); past that, more damping and much more viscosity (THICK_FROM in the code).
+                    Ring speed follows the song's loudness moment to moment (0.35x to 1.8x of ring speed; speed follow slider).
+                    08 feel panel (2026-11-24, "high EQ": responding to the music's feeling, not just loudness): finds the
+                    tempo (120-167 bpm) and bar/phrase (8 bars, anchored at each drop) from kicks and snares; breathes once a
+                    bar, bubbles on eighth notes, accents hits on beats 1 and 3 (groove); tension through a build (length,
+                    phrase position, snare rolls, risers) makes the goo inhale (an inward spiral, color draining, view drawing
+                    back), held in the gap, released by the drop as a bloom of iridescence spreading from the middle with one
+                    big ring and thump (anticipation); a long drop slowly wears the response down, refreshed by new sections or
+                    a clear change in the sound (adapt); melodic stretches (sustained mids, few drums, little sub, tonal) slow
+                    and soften it (tenderness); spectral brightness tints/shines/deepens (mood color); harshness (spectral
+                    flatness) makes it ragged and streaky, smoothness rounder (mood texture); stereo pan and sound type place
+                    hits (staging); each drop makes color linger and calm shimmer more (song memory); when the music stops it
+                    settles home over the ending time (status shows "settling"). A gap now needs near silence straight out of
+                    a build. Default panel layout (Carrie's screenshot, 2026-11-24): two columns, left source/sections/
+                    subwoofer/feel, right signal/forces/goo/iridescence, stacked without overlapping; on short windows the
+                    gaps shrink and then all panel sizes scale down (to 70% at most) so they fit. The source panel's gray
+                    how-to text was removed. Saved panel places use the key ...-panels-v2 (older saved places are ignored).
+                    Nothing is centered any more (Carrie: it made a puddle in the middle): each kick ring starts at its own
+                    place (across by stereo, anywhere up and down), the sub pump's source and the heave wander over most of
+                    the frame, a build's inhale gathers toward a new random focus point (fading with distance) and its drop
+                    blooms from there, staging spreads hits wider, and the rings bend the image along each wave's own slope.
+                    Layering (feel panel, default 1; Carrie found it too busy, worst in calm and build parts, and the plain
+                    liquid-goo nicer): a level (0 calm/tender, rising through a build with its length and tension, 1 in the
+                    drop, sinking back over seconds after) gates each layer: calm is only the once-a-bar breath and a faint
+                    sub heave (no rings, pump, bubbles, mood color, tender glow or memory shimmer) and the film drifts home
+                    faster (home pull at most 45 s); a build adds sub, then kicks/rings/pump, then snares and screeches, then
+                    wobble and bubbles, then mood color. The feel panel's "layers" readout shows which are on. Layering 0
+                    is the earlier behavior.
+                    Smooth, not glitchy (Carrie, 2026-11-24): the rings' and bloom's out-of-roundness now comes from smooth
+                    slow waves (wobble() in the display shader) instead of the goo's own per-pixel detail, which turned to
+                    shimmering noise once the goo was churned; rings carry more color again (RING_THICK 0.14); the
+                    hits' eddies and the bubbles' swirls (what shreds the film into strands) are mostly saved for the drop
+                    (G.chaos: 20% before it), bubbles only come in near and during the drop, and in calm parts the film
+                    drifts home within 30 s.
+                    The deep sub-bass comes from the center again, subtly (Carrie missed the center subwoofer): the sub pump's
+                    ripples and the soft ring for a new bass note start at the center (SUB_PUMP 0.3, SUB_RING 0.35); kick
+                    rings still start all over the frame.
+                    SIMPLIFIED (2026-11-24, Carrie: "getting ridiculous with how many modifiers there are"): six panels, 22
+                    sliders (was eight panels, about 50). Panel order (Carrie, later 2026-11-24): left 01 source, 02 signal, 03 song;
+                    right 06 goo, 05 motion, 04 color. 03 song (build at, drop at, contrast [the old
+                    layering], anticipation, groove, mood), 04 color (calm, build flash, drop, squeeze, color, color speed,
+                    gloss). 02 signal (scope; readouts section [shows "inhaling"], tempo with bar of the phrase, layers;
+                    sensitivity), 05 motion (bass, hits, ring speed, swirl, bubbling), 06 goo (liquid, speed, recover; the
+                    pointer/reset/copy/defaults buttons). Merged: mood = mood color + mood texture + tenderness; squeeze = hit,
+                    drop and ring squeeze; bass = sub heave + sub pump + wobble; hits = kick + snare + screech + kick rings +
+                    thump; recover = home pull + settle. Fixed (in derive(), which sets every old S.* name from the sliders):
+                    response 1.8 s, min build 4 s, drop hold 3 s, gap freeze 0.8, flash fade 0.6 s, calm motion 0.3, build ramp
+                    6 s, adapt 0.6, song memory 0.7, ending 60 s, staging 0.8, hit size 1, ragged 1.5, speed follow 1. Color
+                    speed (new): keeps turning the hue, 0 off, 1 = one turn per 5 s, readout in seconds per turn. The panel
+                    names above this paragraph (sections, iridescence, forces, subwoofer, feel) are the old layout. Saved
+                    panel places use ...-panels-v4.
+                    Springs and drains (2026-11-24, exploring; `[ drains on ]` / `[ drains off ]` in the goo panel, on by
+                    default, remembered; off is exactly the goo without them): two springs well up liquid (the pressure solve
+                    is given a target divergence there) and fill their cores with fresh goo from a wandering reservoir
+                    elsewhere in the photo (the inject pass); two drains take the same amount and swirl like a bathtub. They
+                    drift slightly around fixed spots (SD_HOME), flow gently on their own and harder with level and sub-bass
+                    the film may squeeze around them so color rings form. They have their own panel, 07 springs & drains
+                    (bottom of the right column; the toggle moved there): springs 1-4, drains 1-4 (the drains together always
+                    take what the springs give, so fewer drains pull harder each), flow (each spring's rate, default 0.10), wander (0 fixed at
+                    their spots, 1 roaming slowly over most of the frame). Up to 8 slots in the shaders (springs 0-3, drains
+                    4-7). Saved panel places now use ...-panels-v5.
+                    Drains made less visible (Carrie: colors converged there): no squeeze at drains (only springs), drains
+                    2.2x wider, gentler swirl (DRAIN_SPIN 2), and goo reaching a drain's core fades back into the photo as it
+                    was there (DRAIN_FADE, in the inject pass). Bigger calm-to-drop difference: calm default 0, drop default
+                    4 (max 6), drop squeeze 0.9x squeeze (was 0.6x). SETTINGS_VERSION 5 resets saved calm, drop and flow once.
+                    Drop sensitivity (02 signal, default 2x): hit sensitivity rises with the level from the sensitivity slider
+                    in calm to sensitivity x drop sensitivity in the drop (hitSens(); "sensitivity now" readout). It only
+                    changes the hit thresholds, not the loudness used to read sections, so it can't hold a drop open. The logic was checked by running the page's script in node against a synthetic song
+                    (fake DOM, WebGL and audio); the visuals still need Carrie's eyes.
 images/sketchbook/  liquid-goo.mp4 and cloud-sim.mp4 (800x600 H.264 loops) with -poster.jpg first frames
 images/placeholder.svg  flat #111111 box; now only used by silly and holo mode styles
 favicon.svg         green :) on black
