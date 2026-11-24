@@ -283,10 +283,12 @@ body::after {
      the first column line, down it's the first row line. */
   --margin-a: var(--c1);
   --margin-a-y: var(--r1);
-  /* Type sizes, as a share of the band height: margin type (":) <3 *" and the command line) and body
-     type (everything else). Change the numbers to resize. */
+  /* Type sizes, as a share of the band height: margin type, body type (":) <3 *", the command line and
+     everything else) and h3 (the top band's path, uptime and clock, and the file tree). Change the numbers
+     to resize. */
   --margin-type: calc(var(--band) * 0.9);
   --body-type: calc(var(--band) * 0.6);
+  --h3-type: calc(var(--band) * 0.5);
 
   /* Grid lines: the site's white, partly see-through. */
   --grid-line: rgba(252, 252, 252, 0.55);
@@ -359,7 +361,7 @@ body::after {
 /* JetBrains Mono at line-height 1: the baseline sits 0.14em above the bottom of the line, and the tops
    of the capitals 0.13em below its top. These shifts put them on the band's edges. */
 
-/* Top band, left: ":) <3 *" at the margin font size, sitting on the band's bottom edge. */
+/* Top band, left: ":) <3 *" at body type size, sitting on the band's bottom edge. */
 /* It links home. No green hover: it stays as it is. */
 .band-home:hover,
 .band-home:focus-visible {
@@ -373,7 +375,7 @@ body::after {
   left: 0;
   bottom: 0;
   color: var(--white);
-  font-size: var(--margin-type);
+  font-size: var(--body-type);
   transform: translateY(0.14em);
 }
 
@@ -382,20 +384,25 @@ html[data-page="home"] .band-mark {
   color: var(--green);
 }
 
-/* Top band: the page's path (project information) from the window's left edge (one margin A after the second
-   column line), and its tag (additional project information) on the right. Body type size, sitting on the
-   band's bottom edge. */
+/* Top band, right: the page's path (project information), ending at the last column line. The tag after it in
+   the HTML is empty except for brief notes from the scripts ([ press esc ] while an experiment is open,
+   [ move to slash ] in rage mode), which show to the left of the path. H3 size, sitting on the band's bottom
+   edge; a long path is cut off at the window's left edge (one margin A after the second column line). */
 .band .titlebar {
   position: absolute;
   left: calc(var(--c2) + var(--margin-a) - var(--c1));
   right: 0;
   bottom: 0;
   display: flex;
-  justify-content: space-between;
+  flex-direction: row-reverse;
   gap: 1em;
   color: var(--white);
-  font-size: var(--body-type);
+  font-size: var(--h3-type);
   transform: translateY(0.14em);
+}
+
+.titlebar > :empty {
+  display: none;
 }
 
 .titlebar h1 {
@@ -451,7 +458,7 @@ html[data-page="home"] .band-mark {
   font-style: italic;
 }
 
-/* Bottom band, right: uptime and clock (additional project information), body type size. Capitals hang from the
+/* Bottom band, right: uptime and clock (additional project information), h3 size. Capitals hang from the
    band's top edge, on the same line as the command line. */
 .status {
   position: absolute;
@@ -460,12 +467,12 @@ html[data-page="home"] .band-mark {
   display: flex;
   gap: 1.5em;
   color: var(--white);
-  font-size: var(--body-type);
+  font-size: var(--h3-type);
   transform: translateY(-0.13em);
 }
 
 /* The file tree: from the first column line to the second, from the third row line down to the sixth, text
-   at the top. Body type size, a flat list with a blank line under the root. */
+   at the top. H3 size, a flat list with a blank line under the root. */
 .tree {
   position: absolute;
   left: var(--c1);
@@ -473,7 +480,7 @@ html[data-page="home"] .band-mark {
   top: var(--r3);
   height: calc(var(--r6) - var(--r3));
   overflow: hidden;
-  font-size: var(--body-type);
+  font-size: var(--h3-type);
   line-height: 1.6;
 }
 
@@ -488,7 +495,8 @@ html[data-page="home"] .band-mark {
 }
 
 /* Every name in the tree is gray except the current page, which is white with a green pointer after it. */
-.tree a {
+.tree a,
+.tree-folder {
   color: var(--gray);
 }
 

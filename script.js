@@ -117,7 +117,7 @@ const places = [
   { path: "~/carries-brain/sketchbook", url: "sketchbook.html", names: ["sketchbook"] },
   { path: "~/carries-brain/sketchbook/design", url: "design.html", names: ["design"] },
   { path: "~/carries-brain/sketchbook/design/portfolio-grid", url: "portfolio-grid.html", names: ["portfolio-grid"] },
-  { path: "~/carries-brain/sketchbook/webgl", url: "webgl.html", names: ["webgl", "web-experiments", "experiments"] },
+  { path: "~/carries-brain/sketchbook/webgl", url: "webgl.html", names: ["webgl"] },
   { path: "~/carries-brain/sketchbook/webgl/liquid-goo.glsl", url: "webgl.html#liquid-goo", names: ["liquid-goo"] },
   { path: "~/carries-brain/sketchbook/webgl/cloud-sim.glsl", url: "webgl.html#cloud-sim", names: ["cloud-sim"] },
   { path: "~/carries-brain/sketchbook/webgl/slime-brain.glsl", url: "webgl.html#slime-brain", names: ["slime-brain"] },

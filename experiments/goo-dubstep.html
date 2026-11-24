@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>liquid-goo dubstep</title>
+<title>goo-dubstep</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;400&amp;display=swap">
@@ -396,14 +396,14 @@ const speedOf = (v) => Math.pow(SPEED_RANGE, (v - 0.5) * 2);
 const mid = (v, lo, normal, hi) => (v < 0.5 ? lerp(lo, normal, v * 2) : lerp(normal, hi, (v - 0.5) * 2));
 const colorPeriod = (v) => 1 / (0.2 * v * v);   // color speed: seconds per turn of the color wheel (1 = 5 s)
 const SETTINGS = [
-  { panel: 'signal', id: 'sens', label: 'sensitivity', min: 0.25, max: 3, step: 0.05, def: 1, unit: 'x',
+  { panel: 'signal', id: 'sens', label: 'sensitivity', min: 0.25, max: 3, step: 0.05, def: 0.85, unit: 'x',
     about: 'how loud the input has to be to register. raise it for a quiet tab or line in. it\'s also how easily hits register in calm parts (drop sensitivity raises that in the drop).' },
-  { panel: 'signal', id: 'dropsens', label: 'drop sensitivity', min: 1, max: 4, step: 0.05, def: 2, unit: 'x',
+  { panel: 'signal', id: 'dropsens', label: 'drop sensitivity', min: 1, max: 4, step: 0.05, def: 2.1, unit: 'x',
     about: 'how much more sensitive to hits the goo gets as the song moves from calm to the drop: sensitivity is used in calm parts, sensitivity times this in the drop, rising in between through a build. it only changes how easily kicks, snares and screeches register, not how the song\'s sections are read.' },
 
-  { panel: 'song', id: 'build', label: 'build at', min: 0, max: 1, step: 0.01, def: 0.3,
+  { panel: 'song', id: 'build', label: 'build at', min: 0, max: 1, step: 0.01, def: 0.21,
     about: 'the intensity where calm turns into a build. it\'s the lower dotted line in the signal chart.' },
-  { panel: 'song', id: 'drop', label: 'drop at', min: 0, max: 1, step: 0.01, def: 0.65,
+  { panel: 'song', id: 'drop', label: 'drop at', min: 0, max: 1, step: 0.01, def: 0.73,
     about: 'the intensity where a build turns into a drop. it\'s the upper dotted line in the signal chart.' },
   { panel: 'song', id: 'layering', label: 'contrast', min: 0, max: 1, step: 0.01, def: 1,
     about: 'quiet means quiet. at 1, calm parts look almost like the original liquid-goo (a slow breath and a faint sub swell), a build adds things one at a time as it rises, the drop has everything, and afterwards it calms back down to the photo. at 0 everything runs all the time.' },
@@ -424,10 +424,10 @@ const SETTINGS = [
     about: 'how much the music squeezes and stretches the film, which is what makes new color appear: where hits land, as rings pass, and all over in a drop. at 0 the music moves the goo without changing its color.' },
   { panel: 'color', id: 'hue', label: 'color', min: 0, max: 1, step: 0.01, def: 0,
     about: 'turns every color in the goo around the color wheel.' },
-  { panel: 'color', id: 'colorspeed', label: 'color speed', min: 0, max: 1, step: 0.01, def: 0,
+  { panel: 'color', id: 'colorspeed', label: 'color speed', min: 0, max: 1, step: 0.01, def: 0.15,
     show: (v) => (v < 0.01 ? 'off' : Math.round(colorPeriod(v)) + 's'),
     about: 'keeps turning the colors around the color wheel, starting from the color slider. the number is how many seconds one full turn takes. off keeps them still.' },
-  { panel: 'color', id: 'gloss', label: 'gloss', min: 0, max: 1, step: 0.01, def: 0,
+  { panel: 'color', id: 'gloss', label: 'gloss', min: 0, max: 1, step: 0.01, def: 0.22,
     about: 'how much the surface shines.' },
 
   { panel: 'motion', id: 'bass', label: 'bass', min: 0, max: 2, step: 0.01, def: 1,
@@ -447,12 +447,12 @@ const SETTINGS = [
     about: 'how many drains there are: places where liquid swirls away, like a bathtub. together they always take exactly what the springs give, so with fewer drains each one pulls harder.' },
   { panel: 'drains', id: 'flow', label: 'flow', min: 0, max: 3, step: 0.01, def: 0.1,
     about: 'how fast each spring adds liquid (and the drains take it away). it flows gently on its own and pulses harder with the bass and the song\'s energy.' },
-  { panel: 'drains', id: 'wander', label: 'wander', min: 0, max: 1, step: 0.01, def: 0.2,
+  { panel: 'drains', id: 'wander', label: 'wander', min: 0, max: 1, step: 0.01, def: 0.39,
     about: 'how much the springs and drains move around the screen. at 0 they stay put; at 1 they roam slowly over the whole frame.' },
 
-  { panel: 'goo', id: 'visc', label: 'liquid', min: 0, max: 1, step: 0.01, def: 0.3, show: () => 'goo',
+  { panel: 'goo', id: 'visc', label: 'liquid', min: 0, max: 1, step: 0.01, def: 0.5, show: () => 'goo',
     about: 'thin liquid that glides, or thick goo that moves heavily, like a sheet.' },
-  { panel: 'goo', id: 'speed', label: 'speed', min: 0, max: 1, step: 0.01, def: 0.5, show: (v) => speedOf(v).toFixed(2) + 'x',
+  { panel: 'goo', id: 'speed', label: 'speed', min: 0, max: 1, step: 0.01, def: 0, show: (v) => speedOf(v).toFixed(2) + 'x',
     about: 'the speed of the goo\'s own slow wandering, which goes on with or without music. the music\'s motion isn\'t affected.' },
   { panel: 'goo', id: 'recover', label: 'recover', min: 5, max: 300, step: 1, def: 60, unit: 's',
     about: 'how many seconds the goo takes to find its way back to the photo after the music pushes it around: the film drifting back into place and its new color fading. shorter recovers faster.' },
@@ -471,10 +471,10 @@ function derive() {
   });
 }
 const SETTINGS_KEY = 'liquid-goo-dubstep-settings';
-const SETTINGS_VERSION = 5;
+const SETTINGS_VERSION = 7;
 // Saved under an older version, these go back to their (changed) defaults once: v4 flow 0.10; v5 calm 0 and drop 4,
-// for a bigger difference between calm and drop.
-const SETTINGS_VERSION_RESETS = ['calm', 'full', 'flow'];
+// for a bigger difference between calm and drop; v6 (2026-11-24) Carrie's chosen setup; v7 liquid 0.5.
+const SETTINGS_VERSION_RESETS = ['calm', 'full', 'flow', 'sens', 'dropsens', 'build', 'drop', 'colorspeed', 'gloss', 'wander', 'speed', 'visc'];
 // v2 (2026-11-24): the default layout changed, so places saved under the old one are left behind.
 const PANELS_KEY = 'liquid-goo-dubstep-panels-v5';
 const load = (key) => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { return {}; } };
