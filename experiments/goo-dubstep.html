@@ -99,6 +99,8 @@
     gap: 0.6rem;
   }
   .row label { white-space: nowrap; cursor: default; }
+  /* A suboption (red, green, blue under color): its name indented two characters. */
+  .row.sub label { padding-left: 2ch; }
   .row output, .readout { color: var(--gray); font-variant-numeric: tabular-nums; }
   .row output { text-align: right; white-space: nowrap; }
   .kv { display: flex; justify-content: space-between; gap: 1ch; }
@@ -424,6 +426,12 @@ const SETTINGS = [
     about: 'how much the music squeezes and stretches the film, which is what makes new color appear: where hits land, as rings pass, and all over in a drop. at 0 the music moves the goo without changing its color.' },
   { panel: 'color', id: 'hue', label: 'color', min: 0, max: 1, step: 0.01, def: 0,
     about: 'turns every color in the goo around the color wheel.' },
+  { panel: 'color', id: 'red', label: 'red', min: 0, max: 2, step: 0.01, def: 1, sub: true,
+    about: 'how much red is in the goo, after the color slider has turned it. 1 leaves it as it is, 0 takes the red out, 2 doubles it.' },
+  { panel: 'color', id: 'green', label: 'green', min: 0, max: 2, step: 0.01, def: 1, sub: true,
+    about: 'how much green is in the goo, after the color slider has turned it. 1 leaves it as it is, 0 takes the green out, 2 doubles it.' },
+  { panel: 'color', id: 'blue', label: 'blue', min: 0, max: 2, step: 0.01, def: 1, sub: true,
+    about: 'how much blue is in the goo, after the color slider has turned it. 1 leaves it as it is, 0 takes the blue out, 2 doubles it.' },
   { panel: 'color', id: 'colorspeed', label: 'color speed', min: 0, max: 1, step: 0.01, def: 0.15,
     show: (v) => (v < 0.01 ? 'off' : Math.round(colorPeriod(v)) + 's'),
     about: 'keeps turning the colors around the color wheel, starting from the color slider. the number is how many seconds one full turn takes. off keeps them still.' },
@@ -488,7 +496,7 @@ let ready = false;   // derive() waits until every slider has been read
   // 2026-11-24: many sliders were merged; "contrast" is the old "layering".
   for (const d of SETTINGS) {
     const row = document.createElement('div');
-    row.className = 'row';
+    row.className = d.sub ? 'row sub' : 'row';
     const label = document.createElement('label');
     label.htmlFor = 's-' + d.id;
     label.textContent = d.label;
@@ -870,7 +878,7 @@ void main() {
   // thin-film colour has changed because the film was stretched or piled up.
   display: program(`
 uniform sampler2D uFilm, uOrig, uPhoto, uLut, uLight;
-uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN, uHue, uIris;
+uniform vec2 uFTexel, uScale, uOffset; uniform float uSpan, uBump, uGloss, uN, uHue, uIris; uniform vec3 uRGB;
 // The subwoofer: rings (centre x, y, radius, strength), the sub-bass pump (strength, phase), the thump (zoom),
 // all centred on uCenter. They thicken and thin the film as they pass, so they show in the colour and the shine.
 uniform vec4 uR[6]; uniform vec2 uCenter, uPump, uPumpAt, uFocus; uniform float uZoom, uAspect, uRingThick, uRingWarp, uRagged;
@@ -943,7 +951,8 @@ void main() {
   vec3 Hh = normalize(L + vec3(0, 0, 1));
   float spec = max(pow(max(dot(n, Hh), 0.0), 40.0) - pow(Hh.z, 40.0), 0.0);
   col += uGloss * spec;
-  o = vec4(clamp(hueTurn(toSrgb(col), uHue), 0.0, 1.0), 1.0);
+  // The red, green and blue sliders scale each channel after the color slider's turn.
+  o = vec4(clamp(hueTurn(toSrgb(col), uHue) * uRGB, 0.0, 1.0), 1.0);
 }`),
 };
 
@@ -2137,6 +2146,7 @@ function draw() {
     uBump: BUMP, uN: DATA.n, uIris: iris,
     uGloss: mid(S.gloss, 0, GLOSS, GLOSS * 4) + (0.25 * AN.bright * S.moodcolor * G.mood + 0.3 * AN.tender * (1 - S.layering)) * GLOSS * 2,
     uHue: S.hue + hueDrift + (AN.bright - 0.5) * 0.06 * S.moodcolor * G.mood,
+    uRGB: [S.red, S.green, S.blue],
     uDeep: 1 - 0.18 * (1 - AN.bright) * S.moodcolor * G.mood,
     uBloom: [bloom.r, bloom.on ? 1 : 0, bloom.outer],
     'uR[0]': ringData, uCenter: [0.5, 0.5], uPump: [pumpAmt, pumpPhase], uPumpAt: pumpAt, uFocus: focus,

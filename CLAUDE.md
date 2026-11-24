@@ -180,6 +180,8 @@ experiments/        cloud-sim.html (the cloud simulator; renamed cloud-sim 2026-
                     2.1, build at 0.21, drop at 0.73, color speed 0.15 (222s), gloss 0.22, wander 0.39, speed 0 (0.10x).
                     SETTINGS_VERSION 6 resets those saved values once.
                     Liquid/goo default 0.5 (was 0.3; 2026-11-24); SETTINGS_VERSION 7 resets saved liquid once.
+                    Red, green and blue sliders under color (2026-11-24; suboptions, names indented, `sub: true` in SETTINGS,
+                    `.row.sub`): 0-2, default 1; each scales its channel after the color slider's turn (`uRGB` in the display shader).
                     Drop sensitivity (02 signal, default 2.1x): hit sensitivity rises with the level from the sensitivity slider
                     in calm to sensitivity x drop sensitivity in the drop (hitSens(); "sensitivity now" readout). It only
                     changes the hit thresholds, not the loudness used to read sections, so it can't hold a drop open. The logic was checked by running the page's script in node against a synthetic song
