@@ -115,12 +115,12 @@ const places = [
   { path: "~", url: "index.html", names: ["~", "home", "/"] },
   { path: "~/carries-brain", url: "carries-brain.html", names: ["carries-brain"] },
   { path: "~/carries-brain/sketchbook", url: "sketchbook.html", names: ["sketchbook"] },
+  { path: "~/carries-brain/sketchbook/design", url: "design.html", names: ["design"] },
+  { path: "~/carries-brain/sketchbook/design/portfolio-grid", url: "portfolio-grid.html", names: ["portfolio-grid"] },
   { path: "~/carries-brain/sketchbook/webgl", url: "webgl.html", names: ["webgl", "web-experiments", "experiments"] },
   { path: "~/carries-brain/sketchbook/webgl/liquid-goo.glsl", url: "webgl.html#liquid-goo", names: ["liquid-goo"] },
   { path: "~/carries-brain/sketchbook/webgl/cloud-sim.glsl", url: "webgl.html#cloud-sim", names: ["cloud-sim"] },
   { path: "~/carries-brain/sketchbook/webgl/slime-brain.glsl", url: "webgl.html#slime-brain", names: ["slime-brain"] },
-  { path: "~/carries-brain/sketchbook/design", url: "design.html", names: ["design"] },
-  { path: "~/carries-brain/sketchbook/design/portfolio-grid", url: "portfolio-grid.html", names: ["portfolio-grid"] },
 ];
 const isFile = (place) => place.path.endsWith(".glsl");
 
@@ -447,7 +447,11 @@ function defaultHint() {
   if (root.classList.contains("holo") || root.classList.contains("rage")) return "press esc";
   if (root.classList.contains("silly")) return "type too silly";
   // The home page (<html data-page="home">) suggests silly mode.
-  return root.dataset.page === "home" ? "type silly" : "type help";
+  if (root.dataset.page === "home") return "type silly";
+  if (root.dataset.page === "sketchbook") return "type rage";
+  if (root.dataset.page === "design" || root.dataset.page === "webgl") return "open a project";
+  if (root.dataset.page === "portfolio-grid") return "type cd design";
+  return "type help";
 }
 
 // Wipe the command line's reply. Any change of page does this: going to another page, coming back to one (the
@@ -910,7 +914,7 @@ function setupGridMap() {
   if (!map) return;
   const svg = map.querySelector("svg");
   const NS = "http://www.w3.org/2000/svg";
-  const W = 1618, H = 1000, PAD_L = 0, PAD_T = 46, PAD_R = 30, PAD_B = 20;
+  const W = 1618, H = 1000, PAD_L = 44, PAD_T = 46, PAD_R = 20, PAD_B = 20, LINE_NAME = 22;
   const X = (v) => PAD_L + v * W / 100;
   const Y = (v) => PAD_T + v * H / 100;
   const css = (name) => getComputedStyle(map).getPropertyValue(name).trim();
@@ -950,7 +954,7 @@ function setupGridMap() {
   const rect = (x1, y1, x2, y2, fill, opacity = 1) =>
     el("rect", { x: X(x1), y: Y(y1), width: X(x2) - X(x1), height: Y(y2) - Y(y1), fill, opacity });
   const label = (x, y, text, size, attrs = {}) => {
-    const t = el("text", { x, y, "font-size": size, fill: css("--white"), "font-weight": 100, ...attrs });
+    const t = el("text", { x, y, "font-size": size, fill: css("--map-text"), "font-weight": 100, ...attrs });
     t.textContent = text;
     return t;
   };
@@ -969,18 +973,20 @@ function setupGridMap() {
 
   // Band text (h1): left header, left footer, about (ends on c6) and portfolio (ends on c7), current page underlined.
   const H1 = 17;
-  label(X(C.c2), Y(R.r2) - 3, "[left header]", H1);
-  label(X(C.c2), Y(R.r8) - 3, "[left footer]", H1);
-  label(X(C.c6), Y(R.r2) - 3, "about", H1, { "text-anchor": "end" });
-  label(X(C.c7), Y(R.r2) - 3, "portfolio", H1, { "text-anchor": "end" });
-  el("line", { x1: X(C.c6) - 5 * H1 * 0.6, x2: X(C.c6), y1: Y(R.r2), y2: Y(R.r2), stroke: css("--white"), "stroke-width": 1 });
+  // Text on the bands uses the brighter gray (--map-band-text) so it reads on the green.
+  const onBand = { fill: css("--map-band-text") };
+  label(X(C.c2), Y(R.r2) - 3, "[left header]", H1, onBand);
+  label(X(C.c2), Y(R.r8) - 3, "[left footer]", H1, onBand);
+  label(X(C.c6), Y(R.r2) - 3, "about", H1, { ...onBand, "text-anchor": "end" });
+  label(X(C.c7), Y(R.r2) - 3, "portfolio", H1, { ...onBand, "text-anchor": "end" });
+  el("line", { x1: X(C.c6) - 5 * H1 * 0.6, x2: X(C.c6), y1: Y(R.r2), y2: Y(R.r2), stroke: css("--map-band-text"), "stroke-width": 1 });
 
   // The name: baseline on r3, c2 to c5, letter spacing 40 (15 letters + 14 gaps = 9.56em).
   const nameW = X(C.c5) - X(C.c2), nameSize = nameW / 9.56;
   label(X(C.c2), Y(R.r3), "carrie markusen", nameSize, { "font-weight": 400, "letter-spacing": nameSize * 0.04 });
 
   // Placeholder table from r4: labels c2 to c3, values c3 to c4.
-  const BODY = 11, LH = BODY * 1.6;
+  const BODY = 14, LH = BODY * 1.6;
   let y = Y(R.r4) + BODY * 0.73;
   [["role", ["[role]"]], ["timeline", ["[yyyy-yyyy]"]], ["highlights", ["[highlight]", "", "[highlight]"]]].forEach(([head, lines]) => {
     label(X(C.c2), y, head, BODY, { "font-weight": 400 });
@@ -988,38 +994,52 @@ function setupGridMap() {
     y += (lines.length + 2) * LH;
   });
 
-  // Grid lines, named on the outside: row names on the right, right-aligned to the drawing's edge, so the frame's
-  // left edge lines up with the text above it; column names along the top (close pairs stagger).
+  // Grid lines, named on the outside: row names on the left, left-aligned to the drawing's edge; column names
+  // along the top (close pairs stagger).
   const lines = el("g", {});
   rows.forEach(([n, v]) => {
-    el("line", { x1: X(0), x2: X(100) + 6, y1: Y(v), y2: Y(v), stroke: "rgba(252,252,252,0.8)", "stroke-width": 1, "data-line": n }, lines);
+    el("line", { x1: PAD_L - 6, x2: X(100), y1: Y(v), y2: Y(v), stroke: "rgba(252,252,252,0.8)", "stroke-width": 1, "data-line": n }, lines);
     const dy = n === "r1" || n === "r7" ? -2 : n === "r2" || n === "r8" ? 10 : 4;
-    label(PAD_L + W + PAD_R, Y(v) + dy, n, 13, { fill: css("--green"), "text-anchor": "end" });
+    label(0, Y(v) + dy * LINE_NAME / 13, n, LINE_NAME, { fill: css("--green") });
   });
   cols.forEach(([n, v]) => {
     el("line", { x1: X(v), x2: X(v), y1: PAD_T - 6, y2: Y(100), stroke: "rgba(252,252,252,0.8)", "stroke-width": 1, "data-line": n }, lines);
     const anchor = n === "c1" || n === "c7" ? "end" : n === "c2" || n === "c8" ? "start" : "middle";
-    label(X(v) + (anchor === "end" ? -2 : anchor === "start" ? 2 : 0), PAD_T - 12, n, 13, { fill: css("--green"), "text-anchor": anchor });
+    label(X(v) + (anchor === "end" ? -2 : anchor === "start" ? 2 : 0), PAD_T - 12, n, LINE_NAME, { fill: css("--green"), "text-anchor": anchor });
   });
 
-  // Tables.
-  const fill = (which, data) => {
-    const body = map.querySelector(`table[data-map="${which}"] tbody`);
-    data.forEach(([n, , shown, what]) => {
-      const tr = document.createElement("tr");
-      [n, shown, what].forEach((text) => {
+  // The table: one line per row, row and height on the left, column and width on the right. Hovering a pair
+  // lights up its line in the drawing, and hovering a line in the drawing lights up its pair in the table.
+  const body = map.querySelector('table[data-map="lines"] tbody');
+  const light = (n, on) => {
+    map.querySelectorAll(`[data-line="${n}"], td[data-for="${n}"]`).forEach((e) => e.classList.toggle("is-on", on));
+  };
+  rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    [row, cols[i]].forEach(([n, , shown]) => {
+      [n, shown].forEach((text) => {
         const td = document.createElement("td");
         td.textContent = text;
+        td.dataset.for = n;
+        td.addEventListener("mouseenter", () => light(n, true));
+        td.addEventListener("mouseleave", () => light(n, false));
         tr.appendChild(td);
       });
-      const line = svg.querySelector(`[data-line="${n}"]`);
-      tr.addEventListener("mouseenter", () => { tr.classList.add("is-on"); line.classList.add("is-on"); });
-      tr.addEventListener("mouseleave", () => { tr.classList.remove("is-on"); line.classList.remove("is-on"); });
-      body.appendChild(tr);
     });
-  };
-  fill("rows", rows);
-  fill("cols", cols);
+    body.appendChild(tr);
+  });
+
+  // Lines are hairlines, so each gets a wider invisible strip on top to catch the pointer.
+  const hits = el("g", {});
+  svg.querySelectorAll("line[data-line]").forEach((line) => {
+    const n = line.dataset.line;
+    const hit = el("line", {
+      x1: line.getAttribute("x1"), x2: line.getAttribute("x2"), y1: line.getAttribute("y1"), y2: line.getAttribute("y2"),
+      stroke: "transparent", "stroke-width": 16, "pointer-events": "stroke", class: "grid-map-hit",
+    }, hits);
+    hit.addEventListener("mouseenter", () => light(n, true));
+    hit.addEventListener("mouseleave", () => light(n, false));
+  });
 }
 
 // Site frames (portfolio-grid.html): a simulated browser window. The page renders at desktop size
@@ -1040,8 +1060,10 @@ function setupSiteFrames() {
       frame.style.setProperty("--site-scale", scale);
       iframe.style.width = `${w}px`;
       iframe.style.height = `${h}px`;
-      edge.style.width = `${w * scale}px`;
-      edge.style.height = `${h * scale}px`;
+      // The green edge sits on the frame's border, so it's one border wider on each side.
+      const b = parseFloat(getComputedStyle(frame).borderTopWidth) || 0;
+      edge.style.width = `${w * scale + 2 * b}px`;
+      edge.style.height = `${h * scale + 2 * b}px`;
       handle.style.left = `${w * scale - handle.offsetWidth}px`;
       handle.style.top = `${h * scale - handle.offsetHeight}px`;
       frame.classList.toggle("is-sized", w < FULL_W || h < FULL_H);
@@ -1092,9 +1114,44 @@ function setupSiteFrames() {
   });
 }
 
+// No scanlines over frames and images: the CRT layer (body::after) gets a hole cut in its mask for each one,
+// clipped to the window they sit in, and the holes follow along as the page scrolls or resizes.
+function setupScanlineHoles() {
+  const PICTURES = ".site-frame, .grid-map-drawing, .project-diagram, .gallery img, .gallery video, .gallery iframe, .gallery .grid-thumb";
+  const root = document.documentElement;
+  let queued = false;
+  const update = () => {
+    queued = false;
+    const holes = [];
+    document.querySelectorAll(PICTURES).forEach((el) => {
+      let r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const clip = el.closest(".window");
+      let { left, top, right, bottom } = r;
+      if (clip) {
+        const c = clip.getBoundingClientRect();
+        left = Math.max(left, c.left); top = Math.max(top, c.top);
+        right = Math.min(right, c.right); bottom = Math.min(bottom, c.bottom);
+      }
+      if (right <= left || bottom <= top) return;
+      holes.push(`linear-gradient(#000 0 0) ${left}px ${top}px / ${right - left}px ${bottom - top}px no-repeat`);
+    });
+    if (holes.length) root.style.setProperty("--scan-mask", ["linear-gradient(#000 0 0)", ...holes].join(", "));
+    else root.style.removeProperty("--scan-mask");
+  };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+  document.addEventListener("scroll", queue, true);
+  window.addEventListener("resize", queue);
+  window.addEventListener("load", queue);
+  document.addEventListener("click", queue, true);
+  new ResizeObserver(queue).observe(document.body);
+  update();
+}
+
 setupCli();
 setupClock();
 setupExperiments();
+setupScanlineHoles();
 setupSiteFrames();
 setupGridMap();
 setupDiagramSwitches();

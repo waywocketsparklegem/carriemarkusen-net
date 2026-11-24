@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page="portfolio-grid">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,16 +33,16 @@
           <li>
             <a class="tree-dir" href="sketchbook.html">sketchbook/</a>
             <ul class="tree-sub">
-              <li><a href="webgl.html">webgl</a>
-                <ul class="tree-sub">
-                  <li><a href="webgl.html#liquid-goo">liquid-goo.glsl</a></li>
-                  <li><a href="webgl.html#cloud-sim">cloud-sim.glsl</a></li>
-                  <li><a href="webgl.html#slime-brain">slime-brain.glsl</a></li>
-                </ul>
-              </li>
               <li><a href="design.html">design</a>
                 <ul class="tree-sub">
                   <li><a aria-current="page" href="portfolio-grid.html">portfolio-grid</a></li>
+                </ul>
+              </li>
+              <li><a href="webgl.html">webgl</a>
+                <ul class="tree-sub">
+                  <li><a href="webgl.html#liquid-goo">liquid-goo</a></li>
+                  <li><a href="webgl.html#cloud-sim">cloud-sim</a></li>
+                  <li><a href="webgl.html#slime-brain">slime-brain</a></li>
                 </ul>
               </li>
             </ul>
@@ -78,26 +78,23 @@
               </div>
             </section>
             <!-- .com grid map: a scale drawing of carriemarkusen.com's grid (drawn by setupGridMap in script.js),
-                 then the rows (column 1), the columns (column 2) and the legend (column 3, right-aligned). -->
+                 the drawing across the first two columns; in the third, top-aligned with the drawing's frame, one table
+                 (rows and their heights, columns and their widths, side by side); the legend under the drawing. -->
             <section class="sketch-section">
               <p class="cmd">open .com-grid-map</p>
-              <p class="output project-body">a scale drawing of the grid in its golden-ratio frame. row lines are a share of the screen&rsquo;s height; the outer margins are measured on the height too, so they stay square, and the inner column lines are a share of its width. hover a line in the tables to find it in the drawing.</p>
+              <p class="output project-body">layout and type specifications are set to the final grid. rows and outer margins follow the screen&rsquo;s height, so the margins stay square; inner columns follow its width.</p>
               <div class="span-3 grid-map" id="com-grid-map">
                 <svg class="grid-map-drawing" role="img" aria-label="scale drawing of the carriemarkusen.com grid, with row lines r1 to r8 and column lines c1 to c8"></svg>
                 <div class="grid-map-key">
-                  <table class="map-table" data-map="rows">
-                    <thead><tr><th scope="col">row</th><th scope="col">height</th><th scope="col">what sits there</th></tr></thead>
-                    <tbody></tbody>
-                  </table>
-                  <table class="map-table" data-map="cols">
-                    <thead><tr><th scope="col">column</th><th scope="col">width</th><th scope="col">what sits there</th></tr></thead>
-                    <tbody></tbody>
-                  </table>
                   <ul class="grid-map-legend" aria-label="legend">
                     <li><span class="swatch swatch-margin"></span>outer margin</li>
                     <li><span class="swatch swatch-band"></span>band</li>
                     <li><span class="swatch swatch-line"></span>grid line</li>
                   </ul>
+                  <table class="map-table" data-map="lines">
+                    <thead><tr><th scope="col">row</th><th scope="col">height</th><th scope="col">column</th><th scope="col">width</th></tr></thead>
+                    <tbody></tbody>
+                  </table>
                 </div>
               </div>
             </section>
@@ -107,7 +104,7 @@
                  its smaller layouts; the page scrolls inside the window when it doesn't fit (setupSiteFrames in script.js). -->
             <section class="sketch-section">
               <p class="cmd">curl carriemarkusen.com/about</p>
-              <p class="output project-body">claude code turned this model into a responsive html/css site, effortlessly creating layouts outside traditional &ldquo;web builder&rdquo; frameworks.</p>
+              <p class="output project-body">claude code was used to build a responsive html/css site based on this model, effortlessly creating layouts outside traditional &ldquo;web builder&rdquo; frameworks.</p>
               <div class="output span-3 site-frame">
                 <iframe src="https://carriemarkusen.com/about.html?grid" width="1600" height="989" title="carriemarkusen.com about page" loading="lazy"></iframe>
                 <div class="site-window" aria-hidden="true"></div>
@@ -127,7 +124,7 @@
       <footer class="band band-bottom statusbar">
         <form class="cli" id="cli" autocomplete="off">
           <label for="cli-input">carrie@brain ~&gt;</label>
-          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
+          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type cd design">
         </form>
         <p class="status"><span id="uptime"></span><span id="clock"></span></p>
       </footer>

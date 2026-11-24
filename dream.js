@@ -336,7 +336,7 @@ function wrapWords(text) {
   }
   return lines;
 }
-let rageSteps = 0;  // rage mode's steps owed so far, since it can run less than one per frame
+let rageSteps = 0;  // steps owed so far, since the pace can be less than one per frame
 
 function frame(now) {
   // Entering or leaving rage mode plants a fresh seed (the words in rage, :) otherwise), so no mode inherits the other's growth.
@@ -368,13 +368,13 @@ function frame(now) {
     slashTo: slash ? slash.to : [0, 0],
     slashWidth: slash ? slash.width : 0,
   });
-  // Rage mode grows slower (rageStepsPerFrame), adding up fractions of a step until a whole one is due.
-  let steps = stepsPerFrame;
-  if (raging) {
-    rageSteps += rageStepsPerFrame;
-    steps = Math.floor(rageSteps);
-    rageSteps -= steps;
-  }
+  // Rage mode grows slower (rageStepsPerFrame), adding up fractions of a step until a whole one is due. A page
+  // can set its own pace with a global dreamStepsPerFrame before loading this file (the slime brain thumbnail).
+  const rate = raging ? rageStepsPerFrame
+    : (typeof dreamStepsPerFrame === "number" ? dreamStepsPerFrame : stepsPerFrame);
+  rageSteps += rate;
+  let steps = Math.floor(rageSteps);
+  rageSteps -= steps;
   if (waiting) steps = 0;
   for (let i = 0; i < steps; i++) {
     run(targets[1 - current], ...grid, targets[current].texture);

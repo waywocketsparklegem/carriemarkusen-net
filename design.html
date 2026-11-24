@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page="design">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,16 +33,16 @@
           <li>
             <a class="tree-dir" href="sketchbook.html">sketchbook/</a>
             <ul class="tree-sub">
-              <li><a href="webgl.html">webgl</a>
-                <ul class="tree-sub">
-                  <li><a href="webgl.html#liquid-goo">liquid-goo.glsl</a></li>
-                  <li><a href="webgl.html#cloud-sim">cloud-sim.glsl</a></li>
-                  <li><a href="webgl.html#slime-brain">slime-brain.glsl</a></li>
-                </ul>
-              </li>
               <li><a aria-current="page" href="design.html">design</a>
                 <ul class="tree-sub">
                   <li><a href="portfolio-grid.html">portfolio-grid</a></li>
+                </ul>
+              </li>
+              <li><a href="webgl.html">webgl</a>
+                <ul class="tree-sub">
+                  <li><a href="webgl.html#liquid-goo">liquid-goo</a></li>
+                  <li><a href="webgl.html#cloud-sim">cloud-sim</a></li>
+                  <li><a href="webgl.html#slime-brain">slime-brain</a></li>
                 </ul>
               </li>
             </ul>
@@ -57,8 +57,11 @@
             <div class="output gallery">
               <a href="portfolio-grid.html">
                 <figure class="shot">
-                  <!-- Placeholder image: swap in a picture of the project. -->
-                  <img src="images/placeholder.svg" width="800" height="600" alt="">
+                  <!-- The original golden-ratio grid (rows r1-r8, columns c1-c8, as % of the frame), centered in the square;
+                       it grows to fill the square and shrinks back, on a loop (CSS animation, .grid-thumb). -->
+                  <div class="grid-thumb" role="img" aria-label="the original golden-ratio grid, stretching to fill the square and back">
+                    <div class="grid-thumb-frame"><span class="h" style="top: 3.403%"></span><span class="h" style="top: 5.597%"></span><span class="h" style="top: 23.607%"></span><span class="h" style="top: 38.197%"></span><span class="h" style="top: 61.803%"></span><span class="h" style="top: 76.393%"></span><span class="h" style="top: 94.403%"></span><span class="h" style="top: 96.597%"></span><span class="v" style="left: 2.103%"></span><span class="v" style="left: 3.459%"></span><span class="v" style="left: 14.590%"></span><span class="v" style="left: 38.197%"></span><span class="v" style="left: 61.803%"></span><span class="v" style="left: 85.410%"></span><span class="v" style="left: 96.541%"></span><span class="v" style="left: 97.897%"></span></div>
+                  </div>
                   <figcaption><span class="shot-name">[ portfolio-grid ]</span><span class="shot-dates"><span>112326</span> <span>112326</span></span></figcaption>
                 </figure>
               </a>
@@ -71,7 +74,7 @@
       <footer class="band band-bottom statusbar">
         <form class="cli" id="cli" autocomplete="off">
           <label for="cli-input">carrie@brain ~&gt;</label>
-          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="type help">
+          <input id="cli-input" type="text" spellcheck="false" autocapitalize="off" placeholder="open a project">
         </form>
         <p class="status"><span id="uptime"></span><span id="clock"></span></p>
       </footer>

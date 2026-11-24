@@ -160,6 +160,11 @@ body::after {
   background:
     repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.25) 2px 3px),
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.6) 100%);
+  /* Holes for frames and images (setupScanlineHoles in script.js sets --scan-mask): no scanlines over them. */
+  -webkit-mask: var(--scan-mask, none);
+  -webkit-mask-composite: xor;
+  mask: var(--scan-mask, none);
+  mask-composite: exclude;
 }
 
 /* ---------- Boot screen (home page only) ---------- */
@@ -634,21 +639,34 @@ html[data-page="home"] .band-mark {
   width: calc(var(--c5) - var(--c4) - var(--margin-a));
 }
 
-/* Grid map (.com-grid-map): the drawing spans all three columns; under it the key:
-   the rows table in column 1, the columns table in column 2, the legend in column 3, right-aligned. Areas use the colors from Carrie's PDFs (margin A
-   purple, margin B blue). Body type; tables gray with a hairline under the heading row, line names green. */
+/* Grid map (.com-grid-map), on the three columns: the drawing across columns 1-2 with the legend (gray, in a
+   row) under it; in column 3, the table (rows and heights, columns and widths) with its top level with the top
+   of the drawing's frame (the SVG leaves 46 of its 1682 units above the frame for the column names). Areas are
+   dark tints of the site green (outer margin darker than the band); text inside the drawing a darker gray. Body type; the table gray with a hairline
+   under the heading row, line names green. */
 .sketch-project .span-3 {
   width: calc(var(--c5) - var(--c2) - var(--margin-a));
 }
 
 .grid-map {
-  --map-margin: #7f359e;
-  --map-band: #4a4dd3;
+  --map-margin: #013200;  /* the site green at 20% over black */
+  --map-band: #025e00;    /* the site green at 37% over black */
+  --map-text: #6e6e6e;    /* the text inside the drawing: a darker gray */
+  --map-band-text: var(--gray); /* text on the bands: the normal gray, to read on the green */
   --rule-gray: #545454;
+  --map-width: calc(var(--c4) - var(--c2) - var(--margin-a));
+  display: grid;
+  grid-template-columns: var(--map-width) calc(var(--c5) - var(--c4) - var(--margin-a));
+  column-gap: var(--margin-a);
+  align-items: start;
   margin-top: var(--band);
+  font-size: var(--body-type);
+  line-height: 1.6;
 }
 
 .grid-map-drawing {
+  grid-column: 1;
+  grid-row: 1;
   display: block;
   width: 100%;
   height: auto;
@@ -656,23 +674,29 @@ html[data-page="home"] .band-mark {
 
 .grid-map-drawing text {
   font-family: var(--font);
+  text-shadow: none;
 }
 
 .grid-map-key {
-  display: grid;
-  grid-template-columns: repeat(3, calc(var(--c3) - var(--c2) - var(--margin-a)));
-  column-gap: var(--margin-a);
-  margin-top: calc(var(--band) * 2);
-  font-size: var(--body-type);
-  line-height: 1.6;
+  display: contents;
+}
+
+.grid-map-key .map-table {
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: calc(var(--map-width) * 46 / 1682);
 }
 
 .grid-map-legend {
-  margin: 0;
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 3ch;
+  margin: var(--band) 0 0;
   padding: 0;
   list-style: none;
-  color: var(--white);
-  text-align: right;
+  color: var(--gray);
 }
 
 .swatch {
@@ -685,13 +709,17 @@ html[data-page="home"] .band-mark {
 
 .swatch-margin { background: var(--map-margin); }
 .swatch-band { background: var(--map-band); }
-.swatch-line { height: 0; border-top: 1px solid var(--white); vertical-align: 0.3em; }
+.swatch-line { height: 0; border-top: 1px solid var(--gray); vertical-align: 0.3em; }
 
 .map-table {
   width: 100%;
   border-collapse: collapse;
   color: var(--gray);
 }
+
+/* Name columns sized to their headings. */
+.map-table th:nth-child(1) { width: 5ch; }
+.map-table th:nth-child(3) { width: 8ch; }
 
 .map-table th,
 .map-table td {
@@ -705,21 +733,20 @@ html[data-page="home"] .band-mark {
   border-bottom: var(--rule) solid var(--rule-gray);
 }
 
-.map-table td:first-child {
+.map-table td:nth-child(odd) {
   color: var(--green);
 }
 
-.map-table td:nth-child(2) {
+.map-table td {
   white-space: nowrap;
 }
 
-.map-table tr.is-on td {
+.map-table td.is-on:nth-child(even) {
   color: var(--white);
 }
 
-.map-table td:first-child,
-.map-table tr.is-on td:first-child {
-  color: var(--green);
+.grid-map-hit {
+  cursor: crosshair;
 }
 
 .grid-map-drawing .is-on {
@@ -743,33 +770,34 @@ html[data-page="home"] .band-mark {
   top: 0;
   left: 0;
   border: 0;
+  /* All of the page's text in one gray: no color, every color pushed up to white (brightness 3), then white
+     dimmed to a dark gray (x 0.3 = #4d4d4d). Black stays black. The page is on another site, so it's
+     filtered here rather than restyled. */
+  filter: grayscale(1) brightness(3) brightness(0.3);
   transform-origin: 0 0;
   transform: scale(var(--site-scale, 1));
 }
 
-/* The simulated window's edge (a white hairline), shown once it's smaller than the frame. */
+/* The simulated window's edge: a green hairline, always shown, drawn over the frame's white one (it starts on
+   the frame's border, so at full size the green covers the white). */
 .site-window {
   position: absolute;
-  top: 0;
-  left: 0;
-  border: var(--rule) solid var(--white);
+  z-index: 1;
+  top: calc(-1 * var(--rule));
+  left: calc(-1 * var(--rule));
+  border: var(--rule) solid var(--green);
   pointer-events: none;
-  visibility: hidden;
 }
 
-.site-frame.is-sized .site-window {
-  visibility: visible;
-}
-
-/* The resize handle: a small white corner at the window's bottom right. Drag it to resize the window. */
+/* The resize handle: a small green corner at the window's bottom right. Drag it to resize the window. */
 .site-resize {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   width: 12px;
   height: 12px;
   padding: 0;
   border: 0;
-  background: linear-gradient(135deg, transparent 50%, var(--white) 50%);
+  background: linear-gradient(135deg, transparent 50%, var(--green) 50%);
   cursor: nwse-resize;
   touch-action: none;
 }
@@ -780,7 +808,7 @@ html[data-page="home"] .band-mark {
 }
 
 /* Diagram buttons, one band below the diagram: [ baseline 1 ] [ baseline 2 ] [ baseline 3 ]. The one showing
-   is green, the others white. Body type. */
+   is green, the others gray. Body type. */
 .diagram-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -792,7 +820,7 @@ html[data-page="home"] .band-mark {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--white);
+  color: var(--gray);
   font: inherit;
   font-size: var(--body-type);
   line-height: 1.6;
@@ -897,7 +925,8 @@ html[data-page="home"] .band-mark {
 
 /* Square thumbnails, cropped from the middle. */
 .sketch-experiments .shot img,
-.sketch-experiments .shot video {
+.sketch-experiments .shot video,
+.sketch-experiments .shot iframe {
   aspect-ratio: 1;
   object-fit: cover;
   background: var(--placeholder);
@@ -946,6 +975,10 @@ html[data-page="home"] .band-mark {
 /* Hovering a thumbnail draws a hairline green frame around it. */
 .sketch-experiments .gallery a:hover video,
 .sketch-experiments .gallery a:focus-visible video,
+.sketch-experiments .gallery a:hover iframe,
+.sketch-experiments .gallery a:focus-visible iframe,
+.sketch-experiments .gallery a:hover .grid-thumb,
+.sketch-experiments .gallery a:focus-visible .grid-thumb,
 .sketch-experiments .gallery a:hover img,
 .sketch-experiments .gallery a:focus-visible img {
   outline: var(--rule) solid var(--green);
@@ -1040,6 +1073,54 @@ html[data-page="home"] .band-mark {
   height: auto;
 }
 
+/* Portfolio grid thumbnail: the original golden-ratio grid in gray hairlines on black. It starts as a golden
+   rectangle centered in the square (8% in from the sides), holds 2 seconds, grows to fill the square (1 second),
+   holds 2 seconds, and shrinks back (1 second), on a loop. Its lines are % of the frame, so they stretch with it. */
+.grid-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--black);
+  overflow: hidden;
+}
+
+.grid-thumb-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 84%;
+  height: calc(84% / 1.618);
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--gray);
+  animation: grid-thumb 6s ease-in-out infinite;
+}
+
+.grid-thumb-frame span {
+  position: absolute;
+  background: var(--gray);
+}
+
+.grid-thumb-frame .h { left: 0; right: 0; height: 1px; }
+.grid-thumb-frame .v { top: 0; bottom: 0; width: 1px; }
+
+@keyframes grid-thumb {
+  0%, 33.333% { width: 84%; height: calc(84% / 1.618); }
+  50%, 83.333% { width: calc(100% - 1px); height: calc(100% - 1px); }  /* 1px in, so no edge is clipped */
+  100% { width: 84%; height: calc(84% / 1.618); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid-thumb-frame { animation: none; }
+}
+
+/* A live thumbnail (slime brain): the experiment's own page in a square frame. Clicks go to the link around it,
+   so it can't be dragged; it just grows. */
+.shot iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  pointer-events: none;
+}
+
 .shot figcaption {
   display: flex;
   justify-content: space-between;
@@ -1117,15 +1198,17 @@ html.experiment-open .tree {
   line-height: 1.4;
 }
 
-/* The file name sits on the third row line, like the tree's root. */
+/* The file name sits on the third row line, like the tree's root, in gray. */
 .experiment-name {
   line-height: 1;
+  color: var(--gray);
 }
 
-/* A line about the experiment, in italics, a few lines down. */
+/* A line about the experiment, in gray italics, a few lines down. */
 .experiment-about {
   margin-top: 3em;
   font-style: italic;
+  color: var(--gray);
   white-space: pre-line;  /* a line break in data-about (&#10;) starts a new line */
 }
 
@@ -1160,6 +1243,7 @@ html.experiment-open .tree {
   align-self: stretch;
   flex-wrap: nowrap;
   white-space: nowrap;
+  color: var(--white);  /* slider words in white; only the handle is green */
 }
 
 .control-slider input[type="range"] {
@@ -1221,7 +1305,7 @@ html.experiment-open .tree {
   text-align: right;
 }
 
-/* Sliders: a green hairline with a block-cursor handle. */
+/* Sliders: a white hairline with a green block-cursor handle. */
 .experiment-info input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -1234,12 +1318,12 @@ html.experiment-open .tree {
 
 .experiment-info input[type="range"]::-webkit-slider-runnable-track {
   height: var(--rule);
-  background: var(--action);
+  background: var(--white);
 }
 
 .experiment-info input[type="range"]::-moz-range-track {
   height: var(--rule);
-  background: var(--action);
+  background: var(--white);
 }
 
 .experiment-info input[type="range"]::-webkit-slider-thumb {

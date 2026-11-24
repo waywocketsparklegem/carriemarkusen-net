@@ -38,6 +38,8 @@
 <script>
   // dream.js reads the holo mode tilt from the site's script.js; there are no modes here, so it stays still.
   var holoTilt = { x: 0, y: 0 };
+  // As the webgl page's thumbnail (slime-brain.html?thumb), it grows slower: one step a frame instead of four.
+  if (/[?&]thumb\b/.test(location.search)) var dreamStepsPerFrame = 1;
 </script>
 <script src="../dream.js"></script>
 <script>
