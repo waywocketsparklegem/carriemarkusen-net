@@ -489,6 +489,11 @@ html[data-page="home"] .band-mark {
   margin-bottom: 1.6em;
 }
 
+/* A blank line above a folder (experience/, after sketchbook/). */
+.tree-gap {
+  margin-top: 1.6em;
+}
+
 /* A folder's pages, indented two characters under it. */
 .tree-sub {
   padding-left: 2ch;
