@@ -166,7 +166,7 @@ experiments/        cloud-sim.html (the cloud simulator; renamed cloud-sim 2026-
                     default, remembered; off is exactly the goo without them): two springs well up liquid (the pressure solve
                     is given a target divergence there) and fill their cores with fresh goo from a wandering reservoir
                     elsewhere in the photo (the inject pass); two drains take the same amount and swirl like a bathtub. They
-                    drift slightly around fixed spots (SD_HOME), flow gently on their own and harder with level and sub-bass
+                    drift slightly around spots picked at random on each load (SD_HOME, at least SD_GAP 0.22 apart; random start on their wander paths, SD_PHASE; fixed spots until 2026-11-24), flow gently on their own and harder with level and sub-bass
                     the film may squeeze around them so color rings form. They have their own panel, 07 springs & drains
                     (bottom of the right column; the toggle moved there): springs 1-4, drains 1-4 (the drains together always
                     take what the springs give, so fewer drains pull harder each), flow (each spring's rate, default 0.10), wander (0 fixed at

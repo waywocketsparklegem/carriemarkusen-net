@@ -1461,9 +1461,17 @@ let hueDrift = 0;   // color speed: how far the colors have turned so far
 // 4-7 drains; unused slots have no flow. The drains together always take what the springs give.
 const sdData = new Float32Array(32), resData = new Float32Array(16);
 let sdFlow = 0;
-// Starting spots (share of the view), spread so springs and drains alternate around the frame.
-const SPRING_HOME = [[0.25, 0.7], [0.75, 0.3], [0.5, 0.82], [0.5, 0.18]];
-const DRAIN_HOME = [[0.72, 0.74], [0.28, 0.26], [0.85, 0.5], [0.15, 0.5]];
+// Starting spots (share of the view): new random ones on each load, kept at least SD_GAP apart so no two sit on
+// top of each other. Each also starts its wander at a random point on its path (SD_PHASE, in seconds).
+const SD_GAP = 0.22;
+const SD_HOME = [];
+for (let tries = 0; SD_HOME.length < 8 && tries < 2000; tries++) {
+  const p = [rnd(0.15, 0.85), rnd(0.15, 0.85)];
+  if (SD_HOME.every(([x, y]) => Math.hypot(x - p[0], y - p[1]) > SD_GAP)) SD_HOME.push(p);
+}
+while (SD_HOME.length < 8) SD_HOME.push([rnd(0.15, 0.85), rnd(0.15, 0.85)]);   // rarely needed
+const SPRING_HOME = SD_HOME.slice(0, 4), DRAIN_HOME = SD_HOME.slice(4);
+const SD_PHASE = Array.from({ length: 8 }, () => rnd(0, 1000));
 function springsAndDrains(dt) {
   // Gentle on their own, harder with the song's energy and pulsing with the bass.
   const want = drainsOn ? S.flow * lerp(0.3, 1, level) * (0.6 + 0.6 * AN.subFast) : 0;
@@ -1471,8 +1479,8 @@ function springsAndDrains(dt) {
   sdData.fill(0);
   const t = time, reach = 0.45 * S.wander;
   // Wander: each one drifts on its own slow path, up to most of the frame away from its spot.
-  const place = ([x, y], i) => inView(clamp(x + reach * Math.sin(t * 0.031 + i * 1.7), 0.08, 0.92),
-                                      clamp(y + reach * Math.sin(t * 0.023 + i * 2.3), 0.08, 0.92));
+  const place = ([x, y], i) => inView(clamp(x + reach * Math.sin((t + SD_PHASE[i]) * 0.031 + i * 1.7), 0.08, 0.92),
+                                      clamp(y + reach * Math.sin((t + SD_PHASE[i]) * 0.023 + i * 2.3), 0.08, 0.92));
   const ns = S.nspring, nd = S.ndrain;
   for (let i = 0; i < ns; i++) {
     const [cx, cy] = place(SPRING_HOME[i], i);
